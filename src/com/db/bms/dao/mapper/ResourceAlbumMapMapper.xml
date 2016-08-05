@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.ResourceAlbumMapMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="resourceAlbumMap" type="com.db.bms.entity.ResourceAlbumMap" >
+<id column="id" property="id"/>
+<result column="type" property="type"/>
+<result column="resource_id" property="resourceId"/>
+<result column="album_id" property="albumId"/>
+<result column="created_by" property="createdBy"/>
+</resultMap>
+
+<insert id="addResourceAlbumMap" parameterType="com.db.bms.entity.ResourceAlbumMap" >
+  insert into bus_resource_album_map(id,type,resource_id, album_id,created_by) values(s_res_album.nextval,#{type},#{resourceId},#{albumId},#{createdBy})
+</insert>
+
+<delete id="deleteResourceAlbumMaps" parameterType="java.lang.Long">
+  delete from bus_resource_album_map where type=#{type} and resource_id in 
+   <foreach item="item" index="index" collection="resourceIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+<delete id="deleteResourceAlbumMapsByAlbumId">
+  delete from bus_resource_album_map where type=#{type} and resource_id=#{resourceId} and album_id in
+  <foreach item="item" index="index" collection="albumNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+
+<select id="getResourceAlbumMapCount" resultType="java.lang.Integer">
+select count(1) from bus_resource_album_map m where type=#{type} and m.resource_id=#{resourceId} and m.album_id=#{albumNo}
+</select>
+
+<select id="getResourceAlbumMapCountByAlbumId" resultType="java.lang.Integer">
+select count(1) from bus_resource_album_map m where m.album_id in 
+  <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+</mapper>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.VideoMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="video" type="com.db.bms.entity.Video" >
+<id column="id" property="id"/>
+<result column="video_name" property="videoName"/>
+<result column="asset_id" property="assetId"/>
+<result column="source_url" property="sourceUrl"/>
+<result column="status" property="status"/>
+<result column="user_name" property="userName"/>
+<result column="password" property="password"/>
+<result column="width" property="width"/>
+<result column="height" property="height"/>
+<result column="interval" property="interval"/>
+<result column="password" property="password"/>
+<result column="operator_no" property="operatorNo"/>
+<result column="company_no" property="companyNo"/>
+<result column="group_id" property="groupId"/>
+<result column="create_time" property="createTime"/>
+<result column="update_time" property="updateTime"/>
+<result column="send_time" property="sendTime"/>
+<result column="origin_result" property="originResult"/>
+<result column="fail_reason" property="failReason"/>
+</resultMap>
+
+
+<resultMap type="com.db.bms.entity.Video" id="videoChild" extends="video">
+  <association property="company" column="company_no" select="com.db.bms.dao.CompanyMapper.findCompanyByNo" ></association>
+  <association property="operator" column="operator_no" select="com.db.bms.dao.OperatorMapper.findOperatorById" ></association>
+</resultMap>
+
+<select id="findVideoById" resultMap="videoChild" parameterType="java.lang.Long">
+ select id,video_name,asset_id,source_url,status,user_name,password,width,height,`interval`,operator_no
+ ,company_no,group_id,create_time,update_time,send_time,origin_result,fail_reason 
+ from bus_video where id=#{videoId}
+</select>
+
+<select id="findVideosById" resultMap="video" parameterType="java.lang.Long">
+  select id,video_name,asset_id,source_url,status,user_name,password,width,height,`interval`,operator_no
+  ,company_no,group_id,create_time,update_time,send_time,origin_result,fail_reason 
+  from bus_video where id in 
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<select id="findVideoByAssetId" resultMap="video" parameterType="java.lang.String">
+select id,video_name,asset_id,source_url,status,user_name,password,width,height,`interval`,operator_no
+,company_no,group_id,create_time,update_time,send_time,origin_result,fail_reason 
+from bus_video where asset_id=#{assetId}
+</select>
+
+<select id="findVideoCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Video">
+  select count(1) from bus_video v where 1=1 
+   <if test="groupId != null">
+   and (v.group_id=#{groupId} or v.operator_no=#{groupId})
+   </if>
+   <if test="companyNo != null">
+     and v.company_no=#{companyNo}
+   </if>
+   <if test="operatorNo != null">
+     and v.operator_no=#{operatorNo}
+   </if>
+   <if test="videoName != null and videoName != ''">
+     and v.video_name like &apos;%${videoName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="status != null">
+     and v.status=#{status}
+   </if>
+</select>
+
+<select id="findVideos" resultMap="videoChild"  parameterType="com.db.bms.entity.Video">
+	select id,video_name,asset_id,source_url,status,user_name,password,width,height,
+	`interval`,operator_no,company_no,group_id,create_time,update_time,send_time,
+	origin_result,fail_reason 
+	from bus_video v where 1=1 
+   <if test="groupId != null">
+   and (v.group_id=#{groupId} or v.operator_no=#{groupId})
+   </if>
+   <if test="companyNo != null">
+     and v.company_no=#{companyNo}
+   </if>
+   <if test="operatorNo != null">
+     and v.operator_no=#{operatorNo}
+   </if>
+   <if test="videoName != null and videoName != ''">
+     and v.video_name like &apos;%${videoName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="status != null">
+     and v.status=#{status}
+   </if>
+       order by v.id desc
+       
+	<if test="pageUtil.paging == true" >
+		limit ${pageUtil.pageOffset},${pageUtil.pageSize} 
+	</if></select>
+
+<insert id="addVideo"  parameterType="com.db.bms.entity.Video" >
+ insert into bus_video(id,video_name,asset_id,source_url,status,user_name,password,width,height,`interval`,operator_no,company_no,group_id,create_time) 
+ values(s_video.nextval,#{videoName},#{assetId},#{sourceUrl},#{status},#{userName},#{password},#{width},#{height},
+ #{interval},#{operatorNo},#{companyNo},#{groupId},#{createTime})
+</insert>
+
+<update id="updateVideo" parameterType="com.db.bms.entity.Video" >
+update bus_video set video_name=#{videoName},source_url=#{sourceUrl},status=#{status},user_name=#{userName,jdbcType=VARCHAR},password=#{password,jdbcType=VARCHAR},
+width=#{width},height=#{height},`interval`=#{interval},company_no=#{companyNo},update_time=#{updateTime}
+,send_time=#{sendTime,jdbcType=VARCHAR},origin_result=#{originResult,jdbcType=VARCHAR},fail_reason=#{failReason,jdbcType=VARCHAR} where id=#{id}
+</update>
+
+
+<delete id="deleteVideosById" parameterType="java.lang.Long">
+  delete from bus_video where id in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+</mapper>

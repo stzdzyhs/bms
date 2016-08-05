@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+<mapper namespace="com.db.bms.dao.TemplateMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="template" type="com.db.bms.entity.Template" >
+	<id column="id" property="id"/>
+	<result column="template_name" property="templateName"/>
+	<result column="type" property="type"/>
+	<result column="status" property="status"/>
+	<result column="file_name" property="fileName"/>
+	<result column="file_path" property="filePath"/>
+    <result column="template_desc" property="templateDesc" />
+    <result column="operator_no" property="operatorNo" />
+    <result column="company_no" property="companyNo" />
+    <result column="create_time" property="createTime" />
+    <result column="update_time" property="updateTime" />
+</resultMap>
+
+<resultMap type="com.db.bms.entity.Template" id="templateChild" extends="template">
+  <association property="company" column="company_no" select="com.db.bms.dao.CompanyMapper.findCompanyByNo" ></association>
+  <association property="operator" column="operator_no" select="com.db.bms.dao.OperatorMapper.findOperatorById" ></association>
+</resultMap>
+
+<select id="findTemplateById" resultMap="templateChild" parameterType="java.lang.Long">
+select id,template_name,type,status,file_name,file_path,template_desc,operator_no,company_no,create_time,update_time
+from bus_template where id=#{templateId}
+</select>
+
+<select id="findTemplatesById" resultMap="template" parameterType="java.lang.Long">
+   select id,template_name,type,status,file_name,file_path,template_desc,operator_no,company_no,create_time,update_time
+   from bus_template where id in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<select id="findTemplateCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Template">
+  select count(1) from bus_template t where 1=1
+    <if test="operatorNo != null">
+       and t.operatorNo=#{operatorNo}
+    </if>
+    <if test="templateName != null and templateName != ''">
+       and t.template_name like &apos;%${templateName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if>
+    <if test="type != null">
+       and t.type=#{type}
+    </if>
+    <if test="status != null">
+       and t.status=#{status}
+    </if>
+</select>
+
+<select id="findTemplates" resultMap="templateChild"  parameterType="com.db.bms.entity.Template">
+select id,template_name,type,status,file_name,file_path,template_desc,operator_no,company_no,create_time,update_time
+from bus_template t where 1=1
+    <if test="templateName != null and templateName != ''">
+       and t.template_name like &apos;%${templateName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if>
+    <if test="type != null">
+       and t.type=#{type}
+    </if>
+    <if test="status != null">
+       and t.status=#{status}
+    </if>
+order by t.id desc
+	<if test="pageUtil.paging == true" >
+		limit ${pageUtil.pageOffset},${pageUtil.pageSize} 
+	</if>
+</select>
+
+<select id="getTemplateCountByName" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Template">
+select count(1) from bus_template t where 1=1 
+ <if test="id != null">
+ and t.id != #{id}
+ </if>
+ <if test="templateName != null and templateName != ''">
+  and t.template_name=#{templateName}
+ </if>
+</select>
+
+<insert id="addTemplate"  parameterType="com.db.bms.entity.Template" >
+ insert into bus_template(id,template_name,type,status,file_name,file_path,template_desc,operator_no,company_no,create_time) 
+ values(s_template.nextval,#{templateName},#{type},#{status},#{fileName},#{filePath},#{templateDesc,jdbcType=VARCHAR},#{operatorNo},#{companyNo},
+ #{createTime})
+</insert>
+
+<update id="updateTemplate" parameterType="com.db.bms.entity.Template" >
+  update bus_template set template_name=#{templateName},type=#{type},status=#{status},file_name=#{fileName},file_path=#{filePath},template_desc=#{templateDesc,jdbcType=VARCHAR},
+  update_time=#{updateTime} where id=#{id}
+</update>
+
+<update id="updateTemplateStatus" parameterType="com.db.bms.entity.Template" >
+    update bus_template set status=#{status},update_time=#{updateTime} where id in
+    <foreach item="item" index="index" collection="templateIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</update>
+
+<delete id="deleteTemplatesById" parameterType="java.lang.Long">
+   delete from bus_template where id in 
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+
+</mapper>

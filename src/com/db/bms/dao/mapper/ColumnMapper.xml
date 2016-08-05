@@ -1,0 +1,862 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+<mapper namespace="com.db.bms.dao.ColumnMapper" >
+
+
+<!-- *************************************************** 
+   column alias : col, NOT "column" that is a key of oracle
+   column parent alias/param : colp  
+  *************************************************** -->
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="mapColumn" type="com.db.bms.entity.Column" >
+	<id     column="COLUMN_column_no"       property="columnNo"/>
+	<result column="COLUMN_column_no"       property="columnNo"/>
+	<result column="COLUMN_column_id"       property="columnId"/>
+	<result column="COLUMN_column_name"     property="columnName"/>
+	<result column="COLUMN_cover"           property="cover"/>	
+	<result column="COLUMN_column_desc"     property="columnDesc"/>
+	<result column="COLUMN_parent_no"       property="parentNo"/>
+	<result column="COLUMN_status"          property="status"  />
+
+	<result column="COLUMN_operator_no"      property="operatorNo"/>
+	<result column="COLUMN_company_no"       property="companyNo"  />
+	<result column="COLUMN_create_time"      property="createTime"/>
+	<result column="COLUMN_update_time"      property="updateTime"/>
+	<result column="COLUMN_show_order"       property="showOrder"/>
+	<result column="COLUMN_group_id"         property="groupId"/>
+	<result column="COLUMN_template_id"      property="templateId"/>
+</resultMap>
+
+<!--///////////////////// 连接查询 ////////////////////////-->
+<resultMap type="com.db.bms.entity.Column" id="mapColumn_Parent_Operator" extends="mapColumn">
+	<association property="parent" javaType="com.db.bms.entity.Column">
+		<id     column="PARENT_column_no"    property="columnNo"/>
+		<result column="PARENT_column_no"    property="columnNo"/>
+		<result column="PARENT_column_id"    property="columnId"/>
+		<result column="PARENT_column_name"  property="columnName"/>
+		<result column="PARENT_column_desc"  property="columnDesc"/>
+		<result column="PARENT_parent_no"    property="parentNo"/>
+		<result column="PARENT_status"       property="status"/>
+		<result column="PARENT_operatorNo"   property="operatorNo"/>
+		
+		<result column="companyNo"           property="PARENT_companyNo"/>
+		<result column="create_time"         property="PARENT_createTime"/>
+		<result column="update_time"         property="PARENT_updateTime"/>
+		<result column="COLUMN_show_order"   property="showOrder"/>
+		<result column="PARENT_group_id"     property="groupId"/>
+		<result column="PARENT_template_id"  property="templateId"/>
+  	</association>
+
+	<association property="company" javaType="com.db.bms.entity.Company">
+		<id     column="Company_company_no"       property="companyNo"/>
+	    <result column="Company_company_id"       property="companyId"/>
+	    <result column="Company_company_name"	  property="companyName"/> 
+	  	<result column="Company_company_describe" property="companyDescribe"/>
+	    <result column="Company_create_by"	      property="createBy"/>
+	    <result column="Company_parent_id"        property="parentId"/>
+	    <result column="Company_path"             property="path"/>
+    </association>
+  	
+  	<association property="operator" javaType="com.db.bms.entity.Operator">
+		<id     column="OPERATOR_operator_no"       property="operatorNo" />
+		<result column="OPERATOR_operator_no"       property="operatorNo"/>
+		<result column="OPERATOR_operator_id"       property="operatorId"/>
+		<result column="OPERATOR_operator_name"     property="operatorName"/>
+		<result column="OPERATOR_operator_pwd"      property="operatorPwd"/>
+		<result column="OPERATOR_type"              property="type"/>
+		<result column="OPERATOR_status"            property="status"/>
+		<result column="OPERATOR_operator_email"    property="operatorEmail"/>
+		<result column="OPERATOR_operator_tel"      property="operatorTel"/>
+		<result column="OPERATOR_operator_describe" property="operatorDescribe"/>
+		<result column="OPERATOR_company_no"        property="companyNo"/>
+		<result column="OPERATOR_create_by"         property="createBy"/>
+		<result column="OPERATOR_create_time"       property="createTime"/>
+  	</association>
+</resultMap>
+
+<!-- the new mapper -->
+
+
+<!-- column alias : col, NOT column is a oracle KEY. -->
+<resultMap id='map2Column' type='com.db.bms.entity.Column' >
+	<id column='col_columnNo' property='columnNo'/>
+	<result column='col_updateTime' property='updateTime'/>
+	<result column='col_columnId' property='columnId'/>
+	<result column='col_columnName' property='columnName'/>
+	<result column='col_columnDesc' property='columnDesc'/>
+	<result column='col_parentNo' property='parentNo'/>
+	<result column='col_status' property='status'/>
+	<result column='col_operatorNo' property='operatorNo'/>
+	<result column='col_companyNo' property='companyNo'/>
+	<result column='col_createTime' property='createTime'/>
+	<result column='col_updateTime' property='updateTime'/>
+	<result column='col_cover' property='cover'/>
+	<result column='col_groupId' property='groupId'/>
+	<result column='col_showOrder' property='showOrder'/>
+	<result column='col_templateId' property='templateId'/>
+	<result column='col_level' property='level'/>
+</resultMap>
+
+
+<!-- column parent alias/param : colp -->
+<resultMap id="map2ColumnParent" type="com.db.bms.entity.Column">
+	<id column='colp_columnNo' property='columnNo'/>
+	<result column='colp_updateTime' property='updateTime'/>
+	<result column='colp_columnId' property='columnId'/>
+	<result column='colp_columnName' property='columnName'/>
+	<result column='colp_columnDesc' property='columnDesc'/>
+	<result column='colp_parentNo' property='parentNo'/>
+	<result column='colp_status' property='status'/>
+	<result column='colp_operatorNo' property='operatorNo'/>
+	<result column='colp_companyNo' property='companyNo'/>
+	<result column='colp_createTime' property='createTime'/>
+	<result column='colp_updateTime' property='updateTime'/>
+	<result column='colp_cover' property='cover'/>
+	<result column='colp_groupId' property='groupId'/>
+	<result column='colp_showOrder' property='showOrder'/>
+	<result column='colp_templateId' property='templateId'/>
+</resultMap>
+
+<resultMap id="map2ColumnExt" type="com.db.bms.entity.Column" extends="map2Column">
+	<association property="parent" resultMap="map2ColumnParent"/>
+	<association property="company" resultMap="com.db.bms.dao.CompanyMapper.map2Company"/>
+	<association property="operator" resultMap="com.db.bms.dao.OperatorMapper.map2Operator"/>
+</resultMap>
+
+<sql id='fields2Column'>
+	col.column_no          	  col_columnNo,
+	col.column_id          	  col_columnId,
+	col.column_name           col_columnName,
+	col.column_desc           col_columnDesc,
+	col.parent_no             col_parentNo,
+	col.status                col_status,
+	col.operator_no           col_operatorNo,
+	col.company_no            col_companyNo,
+	col.create_time           col_createTime,
+	col.update_time           col_updateTime,
+	col.cover                 col_cover,
+	col.group_id              col_groupId,
+	col.show_order            col_showOrder,
+	col.template_id           col_templateId
+</sql>
+<sql id='fields2ColumnParent'>
+	colp.column_no         colp_columnNo,
+	colp.column_id         colp_columnId,
+	colp.column_name       colp_columnName,
+	colp.column_desc       colp_columnDesc,
+	colp.parent_no         colp_parentNo,
+	colp.status            colp_status,
+	colp.operator_no       colp_operatorNo,
+	colp.company_no        colp_companyNo,
+	colp.create_time       colp_createTime,
+	colp.update_time       colp_updateTime,
+	colp.cover             colp_cover,
+	colp.group_id          colp_groupId,
+	colp.show_order        colp_showOrder,
+	colp.template_id       colp_templateId
+</sql>
+
+
+<!-- oracle分页前缀 -->
+<!-- table alias: col, NOT column !!! -->
+<sql id="pagePrefix">
+</sql>
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="col.pageUtil.paging == true" >
+		limit ${col.pageUtil.pageOffset},${col.pageUtil.pageSize} 
+	</if>
+</sql>
+<!-- //////////////////////////////////////////////////////////////////////// -->
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	select s_column.nextval from dual
+</select>
+
+<!--  table fields  -->
+<sql id="fieldsColumn">
+	bus_column.column_no           COLUMN_column_no,
+	bus_column.column_id           COLUMN_column_id,
+	bus_column.column_name         COLUMN_column_name,
+	bus_column.column_desc         COLUMN_column_desc,
+	bus_column.cover               COLUMN_cover,
+	bus_column.parent_no           COLUMN_parent_no,
+	bus_column.status              COLUMN_status,
+	bus_column.operator_no         COLUMN_operator_no,
+	bus_column.company_no          COLUMN_company_no,
+	bus_column.create_time         COLUMN_create_time,
+	bus_column.update_time         COLUMN_update_time,
+	bus_column.show_order          COLUMN_show_order,
+	bus_column.group_id            COLUMN_group_id,
+	bus_column.template_id         COLUMN_template_id
+</sql>
+<sql id="fieldsParent">
+	parent.column_no            PARENT_column_no,
+	parent.column_id            PARENT_column_id,
+	parent.column_name          PARENT_column_name,
+	parent.column_desc          PARENT_column_desc,
+	parent.parent_no            PARENT_parent_no,
+	parent.status               PARENT_status,
+	parent.operator_no          PARENT_operator_no,
+	parent.company_no           PARENT_company_no,
+	parent.create_time          PARENT_create_time,
+	parent.update_time          PARENT_update_time,
+	parent.show_order           PARENT_show_order,
+	parent.group_id             PARENT_group_id,
+    parent.template_id            PARENT_template_id
+</sql>
+
+<!-- select by no(primary key) -->
+<select id="selectByNo" parameterType="java.lang.Long" resultMap="map2ColumnExt">
+	select <include refid="fields2Column"/>,<include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>
+	from bus_column col left join sys_operator operator on col.operator_no = operator.operator_no where column_no = ${no}
+</select>
+
+<!-- table alias: col, NOT column !!! -->
+<select id="selectByNoWithCompany" parameterType="java.lang.Long" resultMap="map2ColumnExt">
+	select <include refid="fields2Column"/>,
+		<include refid="fields2ColumnParent"/>, 
+		<include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>, 
+		<include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>  	
+	from bus_column col 
+	left join bus_column colp on col.parent_no=colp.column_no 
+	left join sys_operator operator on col.operator_no = operator.operator_no
+	left join bus_company company on col.company_no=company.company_no
+	where col.column_no = ${no}
+</select>
+
+<!-- select by no s(primary key array) -->
+<select id="selectByNos"  resultMap="map2Column" >
+	select <include refid="fields2Column"/> from bus_column col where column_no in 
+	<foreach item="item" index="index" collection="nos" open="(" separator="," close=")">
+    	#{item}
+    </foreach>
+</select>
+
+<select id="queryOperatorAdminPermission" resultType="java.lang.Integer" parameterType="com.db.bms.entity.Column" >
+	<choose>
+		<when test="col.curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin  -->
+			select 1 from dual
+		</when>
+		<when test="col.curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+			select count(*) from bus_column col where company_no = #{col.curOper.companyNo} and column_no=#{col.columnNo}) 
+		</when>
+		<when test="col.curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			select 0 from dual 
+		</when>
+		<otherwise>
+			select 0 from dual 
+		</otherwise>
+	</choose>
+</select>
+
+<!-- 查询,实体查询   -->
+<!-- ******************************************************** -->
+<!--  sql fragment -->
+<!-- ******************************************************** -->
+<sql id="filterSearch">
+   <if test="col.groupId != null and col.allocResourceIds != null and col.allocResourceIds.size &gt; 0">
+	   and (col.group_id=#{col.groupId} or col.operator_no=#{col.groupId} or col.column_no in
+      <foreach item="item" index="index" collection="col.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>)
+   </if>
+   <if test="col.groupId != null and (col.allocResourceIds == null or col.allocResourceIds.size == 0)">
+	   and (col.group_id=#{col.groupId} or col.operator_no=#{col.groupId})
+   </if>
+   <if test="col.groupId == null and col.allocResourceIds != null and col.allocResourceIds.size &gt; 0">
+      or col.column_no in
+      <foreach item="item" index="index" collection="col.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="col.groupId == null and (col.allocResourceIds == null or col.allocResourceIds.size == 0)">
+      <if test="col.operatorNo != null">
+       and col.operator_no=#{col.operatorNo}
+      </if>
+   </if>
+   <if test="col.columnId != null  and col.columnId != '' " >
+       and col.column_id like &apos;%${col.columnId}%&apos;
+   </if>
+   <if test="col.columnName != null  and col.columnName != '' " >
+       and col.column_name like &apos;%${col.columnName}%&apos;
+   </if>
+   <if test="col.parentNo != null  and col.parentNo > 0 " >
+       and col.parent_no = #{col.parentNo}
+   </if>
+   <if test="col.status != null and col.status >= 0 " >
+       and col.status = #{col.status}
+   </if>
+   <if test="col.companyNo != null and col.companyNo != ''" >
+       and col.company_no = #{col.companyNo}
+   </if>
+</sql>
+
+<!-- NOTE: this fileter use alias: column -->
+<sql id="filterSearch2">
+   <if test="col.columnId != null and col.columnId != '' " >
+       and col.column_id like &apos;%${col.columnId}%&apos;
+   </if>
+   <if test="col.columnName != null  and col.columnName != '' " >
+       and col.column_name like &apos;%${col.columnName}%&apos;
+   </if>
+   <if test="col.status != null and col.status >= 0 " >
+       and col.status = #{col.status}
+   </if>
+   <if test="col.companyNo != null and col.companyNo != ''" >
+       and col.company_no = #{col.companyNo}
+   </if>
+   <if test="col.parentNo != null and col.parentNo == -1 " >
+       and col.parent_no is null
+   </if>
+</sql>
+
+<sql id="filterByOperatorForRead" >
+	<choose>
+		<when test="col.curOper == null" >
+			and (1=0)
+		</when>
+		<when test="col.curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin, empty -->
+		</when>
+		<when test="col.curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+			and (col.company_no = #{col.curOper.companyNo}) 
+		</when>
+		<when test="col.curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			and (col.company_no = #{col.curOper.companyNo}) 
+		</when>
+		<otherwise>
+			and (1=0)
+		</otherwise>
+	</choose>
+</sql>
+
+<sql id="filterByResAlloc" >
+	<if test="col.groupId != null ">
+	   and (col.group_id=#{col.groupId} or col.operator_no=#{col.groupId} or exists (select 'x' from bus_resource_allocation ra where ra.RESOURCE_ID = col.COLUMN_NO and ra.type = 4 and ra.OPERATOR_NO=#{col.groupId}))
+   </if>
+</sql>
+	
+<!-- ******************************************************** -->
+<select id="selectColumnCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Column">
+   select count(*) from bus_column col
+   where 1=1
+   <include refid="filterSearch"/>
+<!--    <include refid="filterByOperatorForRead"/>  -->
+</select>
+
+<select id="selectColumns" resultMap="map2ColumnExt"  parameterType="com.db.bms.entity.Column">
+	<include refid="pagePrefix" />
+	
+   	select <include refid="fields2Column"/>, <include refid="fields2ColumnParent"/>, 
+   	<include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>, 
+   	<include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>
+ 	from bus_column col 
+	left join bus_column colp on col.parent_no=colp.column_no 
+	left join sys_operator operator on col.operator_no = operator.operator_no
+	left join bus_company company on col.company_no = company.company_no
+	where 1=1
+   	<include refid="filterSearch"/>
+<!--     <include refid="filterByOperatorForRead"/> -->
+   	<!-- order by col.show_order,col.column_no -->
+   	order by col.update_time desc, col.show_order, col.column_no
+
+	<include refid="pageSuffix"/>
+</select>
+<!-- ******************************************************** -->
+
+<select id="selectColumnTopestParentAndLevel" resultMap="map2Column" >
+	select level col_level,  col.column_no col_parentNo from bus_column col  
+	where parent_no is null 
+	start with col.column_no=#{columnNo} connect by prior parent_no = column_no 
+</select>
+
+<select id="selectColumnByParentAndLevel" resultMap="map2ColumnExt"  parameterType="com.db.bms.entity.Column">
+	select <include refid="fields2Column"/>,
+   	<include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>, 
+   	<include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>
+	from bus_column col  
+	left join sys_operator operator on col.operator_no = operator.operator_no
+	left join bus_company company on col.company_no = company.company_no
+	where level &lt;= #{level}
+	start with col.column_no=#{columnNo} connect by prior column_no=parent_no
+	order by level
+</select>
+
+
+<!-- column.curOper and column.columnNo must set! -->
+<select id="selectColumnsAndExcludeCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Column">
+   select count(*) from bus_column col
+   where column_no not in (select column_no from bus_column start with col.column_no=#{col.columnNo} connect by prior column_no=parent_no)
+   <include refid="filterSearch"/>
+   <include refid="filterByOperatorForRead"/> 
+</select>
+
+<select id="selectColumnsAndExclude" resultMap="map2ColumnExt"  parameterType="com.db.bms.entity.Column">
+	<include refid="pagePrefix" />
+	
+   	select <include refid="fields2Column"/>, <include refid="fields2ColumnParent"/>, 
+   	<include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>, 
+   	<include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>
+ 	from bus_column col 
+	left join bus_column colp on col.parent_no=colp.column_no 
+	left join sys_operator operator on col.operator_no = operator.operator_no
+	left join bus_company company on col.company_no = company.company_no
+	where col.column_no not in (select column_no from bus_column col start with col.column_no=#{col.columnNo} connect by prior column_no=parent_no)
+   	<include refid="filterSearch"/>
+    <include refid="filterByOperatorForRead"/>
+   	order by col.show_order,col.column_no
+
+	<include refid="pageSuffix"/>
+</select>
+<!-- ******************************************************** -->
+
+<!-- need to set column.articleId -->
+<select id="selectNewColumnForArticleCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Column">
+	select count(*) from bus_column col 
+	where company_no = (select company_no from bus_article article where article_no=#{col.articleNo, jdbcType=NUMERIC}) 
+	and column_no not in (select column_no from bus_column_article_map where article_no=#{col.articleNo, jdbcType=NUMERIC}) 
+   	<include refid="filterSearch"/>
+</select>
+
+<select id="selectNewColumnForArticle" resultMap="map2ColumnExt"  parameterType="com.db.bms.entity.Column">
+	<include refid="pagePrefix" />
+
+	select <include refid="fields2Column"/>,  <include refid="fields2ColumnParent"/> 
+	from bus_column col 
+	left join bus_column colp on col.parent_no=colp.column_no 
+	where col.company_no = (select company_no from bus_article where article_no=#{col.articleNo, jdbcType=NUMERIC}) 
+	and col.column_no not in (select column_no from bus_column_article_map where article_no=#{col.articleNo, jdbcType=NUMERIC}) 
+   	<include refid="filterSearch"/>
+	
+	<include refid="pageSuffix"/>
+</select>
+
+<!-- 查询,主键查询   -->
+<select id="selectByPrimaryKey"  resultMap="map2Column" parameterType="java.lang.Long">
+  	select <include refid="fields2Column"/> from BUS_COLUMN col where column_no=${columnNo}  
+</select>
+
+<!-- <select id="getColumnCountByIdOrName" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Column"> -->
+<!-- 	select count(1) from BUS_COLUMN where 1=1  -->
+<!--     <if test="column.columnNo != null  and column.columnNo > 0 " > -->
+<!--     and column_no != #{column.columnNo}  -->
+<!--    	</if> -->
+<!--     <if test="column.columnId != null  and column.columnId != '' " > -->
+<!--     and column_id=#{column.columnId} -->
+<!--    	</if> -->
+<!--    	<if test="column.columnName != null and column.columnName != '' " > -->
+<!--     and column_name=#{column.columnName} -->
+<!--    	</if> -->
+<!-- </select> -->
+
+<select id="getSameIdCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Column">
+	select count(1) from bus_column col where 1=1 
+    <if test="col.columnNo != null and col.columnNo > 0 " >
+    and column_no != #{col.columnNo} 
+   	</if>
+    <if test="col.columnId != null and col.columnId != '' " >
+    and column_id=#{col.columnId}
+   	</if>
+</select>
+<select id="getSameNameCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Column">
+	select count(1) from bus_column col where 1=1 
+    <if test="col.columnNo != null  and col.columnNo > 0 " >
+    and column_no != #{col.columnNo} 
+  	</if>
+   	<if test="col.columnName != null and col.columnName != '' " >
+    and coloum_name=#{col.columnName}
+   	</if>
+</select>
+
+<select id="getColumnRefCount" resultType="java.lang.Integer"  parameterType="java.lang.Long">
+	select count(*) from BUS_COLUMN col where parent_no=#{no}
+</select>	
+
+
+<insert id="addColumn"  parameterType="com.db.bms.entity.Column" >
+    insert into BUS_COLUMN(column_no, parent_no, column_id, column_name, column_desc, 
+    	operator_no, company_no, create_time,update_time, group_id,show_order, template_id, cover) values(
+    	#{col.columnNo, jdbcType=NUMERIC},
+    	#{col.parentNo, jdbcType=NUMERIC},
+    	#{col.columnId, jdbcType=VARCHAR},
+    	#{col.columnName, jdbcType=VARCHAR},
+    	#{col.columnDesc, jdbcType=VARCHAR},
+    	#{col.operatorNo, jdbcType=NUMERIC},
+    	#{col.companyNo, jdbcType=NUMERIC},
+    	#{col.createTime, jdbcType=VARCHAR},
+    	#{col.updateTime, jdbcType=VARCHAR}, <!-- this is to easy sorting when list column -->
+    	#{col.groupId, jdbcType=NUMERIC},
+    	#{col.showOrder, jdbcType=NUMERIC},
+    	#{col.templateId, jdbcType=NUMERIC},
+    	#{col.cover, jdbcType=VARCHAR}  )
+</insert>
+
+<update id="updateColumn" parameterType="com.db.bms.entity.Column" >
+	update BUS_COLUMN 
+	<set> 
+		parent_no=#{col.parentNo, jdbcType=NUMERIC}, 
+		column_name=#{col.columnName, jdbcType=VARCHAR},
+		column_desc=#{col.columnDesc, jdbcType=VARCHAR},
+		show_order=#{col.showOrder, jdbcType=NUMERIC},
+		template_id=#{col.templateId, jdbcType=NUMERIC},
+		cover=#{col.cover, jdbcType=VARCHAR},
+		status=#{col.status, jdbcType=VARCHAR},
+		update_time=#{col.updateTime,jdbcType=VARCHAR}
+<!-- NOT allow to update company_no -->
+	</set>
+	where column_no=#{col.columnNo}
+</update>
+
+<update id="audit" >
+	update bus_column set status=${status} where column_no in 
+	<foreach item="item" index="index" collection="nos" open="(" separator="," close=")">
+		#{item}
+	</foreach>
+    <!-- <include refid="filterByOperatorForWrite"/> -->
+</update>
+
+<!-- <select id="findColumnsWithSubByNo"  resultMap="column" > -->
+<!--     select c.column_no,c.column_id,c.column_name,c.column_describe,c.create_by,c.create_time,c.parent_id,c.path  -->
+<!--     from bus_column c, -->
+<!--     (select column_no,path from bus_column where column_no in  -->
+<!--    <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> -->
+<!--       #{item} -->
+<!--     </foreach> -->
+<!--     ) c1  -->
+<!--     where c.column_no=c.column_no -->
+<!-- </select> -->
+
+<!-- ******************************************************** -->
+
+<sql id="filterByOperatorForWrite"> <!-- write: update/delete -->
+	<choose>
+		<when test="col.curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin, empty -->
+		</when>
+		<when test="col.curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+			and (bus_col.company_no = #{col.curOper.companyNo}) 
+		</when>
+		<when test="col.curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			and (bus_col.operator_no = #{col.curOper.operatorNo}) 
+		</when>
+		<otherwise>
+		</otherwise>
+	</choose>
+</sql>	
+
+<!-- delete column, column.curOper muset set -->
+<delete id="deleteColumn" parameterType="com.db.bms.entity.Column">
+    delete from bus_column where column_no=#{col.columnNo} <!-- <include refid="filterByOperatorForWrite"/> -->
+</delete>
+<delete id="deleteColumns" parameterType="java.lang.Long">
+   delete from bus_column where column_no in 
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+<!-- ******************************************************** -->
+
+
+<select id="findColumnsByParentNo" resultMap="map2Column" parameterType="com.db.bms.entity.Column">
+  	select  <include refid="fields2Column" />  	 
+  	from BUS_COLUMN col where parent_id=#{parentNo}
+</select>
+
+<select id="findColumnCountById" resultType="java.lang.Integer">
+   select count(1) from bus_column col where col.column_no in
+   <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<select id="findColumnById" resultMap="mapColumn" parameterType="java.lang.String">
+	select <include refid="fields2Column"/>
+ 	from bus_column col where col.column_id=#{columnId}
+</select>
+
+<select id="columnSelectList" resultMap="map2Column"  parameterType="com.db.bms.entity.Column">      
+	<include refid="pagePrefix"/>
+	    select  <include refid="fields2Column"/>
+	    from (select * from bus_column start with column_no=#{columnNo} connect by prior column_no=parent_id) col 
+	    where parent_id&lt;&gt;-1
+	<include refid="pageSuffix"/>
+</select>
+
+<select id="columnSelectListCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Column">
+	select count(1) from(select * from bus_column t start with t.column_no=#{columnNo} connect by  prior  t.column_no=t.parent_id) where parent_id&lt;&gt;-1
+</select>
+
+<select id="getAllColumnsCount" resultType="java.lang.Integer">
+	select count(*) from bus_column
+</select>
+
+<!-- childColumn -->
+<sql id="filterChildColumn">
+	<if test="col.columnId != null  and col.columnId != '' " >
+       and col.column_id like &apos;%${col.columnId}%&apos;
+   	</if>
+   	<if test="col.columnName != null  and col.columnName != '' " >
+    	and col.column_name like &apos;%${col.columnName}%&apos;
+   	</if>
+</sql>
+
+<sql id="orderRule">
+	order by col.show_order
+	<if test="col.sortKey == 'createTime'">
+		,col.create_time ${col.sortType}
+	</if>
+	<if test="col.sortKey == 'columnName'">
+		,col.column_name ${col.sortType}
+	</if>
+</sql>
+<select id="selectChildColumnCount" parameterType="com.db.bms.entity.Column" resultType="java.lang.Integer">
+	select count(*)	from bus_column col
+<!-- 	left join bus_column parent on bus_column.column_no=parent.column_no -->
+<!-- 	left join sys_operator on sys_operator.operator_no=parent.operator_no   -->
+<!-- 	left join bus_company on bus_company.company_no=parent.company_no  -->
+	where col.parent_no = #{col.columnNo}
+	<include refid="filterChildColumn"/>
+</select>
+
+<select id="selectChildColumn" resultMap="map2ColumnExt" parameterType="com.db.bms.entity.Column">
+	<include refid="pagePrefix" />
+		
+   	select <include refid="fields2Column"/>, <include refid="fields2ColumnParent"/> ,
+   	<include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>, 
+   	<include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>
+   	from bus_column col
+ 	left join bus_column colp on col.parent_no=colp.column_no  
+	left join sys_operator operator on col.operator_no = operator.operator_no
+	left join bus_company company on col.company_no = company.company_no
+	where col.parent_no= #{col.columnNo}
+	<include refid="filterChildColumn"/>
+		
+   	<include refid="orderRule"/>
+   	
+	<include refid="pageSuffix"/>
+</select>
+
+<select id="findArticlePublishColumnCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Column">
+   select count(1) from bus_column col, bus_resource_publish_map m 
+   where 1=1
+   and col.column_no=m.parent_id and m.type=#{type} and m.resource_id=#{resourceId} 
+   <if test="col.groupId != null">
+   and (col.group_id=#{col.groupId} or col.operator_no=#{col.groupId})
+   </if>
+   <if test="col.allocResourceIds != null and col.allocResourceIds.size > 0">
+		<if test="col.operatorNo != null">
+      	and (col.operator_no=#{col.operatorNo} or col.column_no in
+      	<foreach item="item" index="index" collection="col.allocResourceIds" open="(" separator="," close=")">
+      		#{item}
+     	</foreach>
+      	) 
+   		</if>
+   </if>
+   <if test="col.allocResourceIds == null or col.allocResourceIds.size &lt;= 0">
+      <if test="col.operatorNo != null">
+       and col.operator_no=#{col.operatorNo}
+      </if>
+   </if>
+   <if test="col.columnId != null  and col.columnId != '' " >
+       and col.column_id like &apos;%${col.columnId}%&apos;
+   </if>
+   <if test="col.columnName != null  and col.columnName != '' " >
+       and col.column_name like &apos;%${col.columnName}%&apos;
+   </if>
+</select>
+
+<select id="findArticlePublishColumns" resultMap="map2ColumnExt"  parameterType="com.db.bms.entity.Column">
+	<include refid="pagePrefix"/>
+	
+   	select <include refid="fields2Column"/>, <include refid="fields2ColumnParent"/>, 
+   	<include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>, 
+   	<include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>
+   	from bus_column col 
+    inner join bus_resource_publish_map m on col.column_no=m.parent_id
+    left join bus_column colp on col.parent_no=colp.column_no 
+    left join sys_operator operator on col.operator_no = operator.operator_no
+    left join bus_company company on col.company_no = company.company_no
+    where 1=1
+   	and col.column_no=m.parent_id and m.type=#{type} and m.resource_id=#{resourceId} 
+   	<if test="col.groupId != null">
+   	and (col.group_id=#{col.groupId} or col.operator_no=#{col.groupId})
+   	</if>
+   	<if test="col.allocResourceIds != null and col.allocResourceIds.size > 0">
+    	<if test="col.operatorNo != null">
+      	and (col.operator_no=#{col.operatorNo} or col.column_no in
+      	<foreach item="item" index="index" collection="col.allocResourceIds" open="(" separator="," close=")">
+      		#{item}
+     	</foreach>
+      	) 
+   		</if>
+   	</if>
+   	<if test="col.allocResourceIds == null or col.allocResourceIds.size &lt;= 0">
+      	<if test="col.operatorNo != null">
+       	and col.operator_no=#{col.operatorNo}
+      	</if>
+   	</if>
+   	<if test="col.columnId != null  and col.columnId != '' " >
+       	and col.column_id like &apos;%${col.columnId}%&apos;
+   	</if>
+   	<if test="col.columnName != null and col.columnName != '' " >
+       	and col.column_name like &apos;%${col.columnName}%&apos;
+   	</if>
+   	order by col.column_no
+
+	<include refid="pageSuffix"/>
+</select>
+
+<select id="findResourceColumnNoPublishCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Column">
+   	select count(1)
+ 	from bus_column col
+	left join bus_column colp on col.parent_no=colp.column_no 
+	left join sys_operator operator on col.operator_no = operator.operator_no
+	left join bus_company company on col.company_no = company.company_no
+    where 1=1
+	<if test="resourceIds!=null">    
+    and col.column_no not in(
+       	select m.parent_id from bus_resource_publish_map m 
+       	where m.type=${@com.db.bms.entity.EntityType@TYPE_ARTICLE} and 
+       	m.parent_type=${@com.db.bms.entity.EntityType@TYPE_COLUMN} and 
+       	m.resource_id in
+		<foreach item="item" index="index" collection="resourceIds" open="(" separator="," close=")">
+    		#{item}
+    	</foreach>
+    ) 
+	</if>    
+   	<include refid="filterSearch"/>
+   	<!-- 
+   	<include refid="filterByOperatorForRead"/>
+   	
+   	<include refid="filterByResAlloc"></include>
+   	 -->
+</select>
+
+<!-- resourceIds is articleNo !!! -->
+<select id="findResourceColumnNoPublishs" resultMap="map2ColumnExt"  >
+	<include refid="pagePrefix" />
+	
+   	select <include refid="fields2Column"/>, <include refid="fields2ColumnParent"></include>, 
+   	<include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>, 
+   	<include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>
+ 	from bus_column col
+	left join bus_column colp on col.parent_no=colp.column_no 
+	left join sys_operator operator on col.operator_no = operator.operator_no
+	left join bus_company company on col.company_no = company.company_no
+    where 1=1
+	<if test="resourceIds!=null">    
+    and col.column_no not in(
+       	select m.parent_id from bus_resource_publish_map m 
+       	where m.type=${@com.db.bms.entity.EntityType@TYPE_ARTICLE} and 
+       	m.parent_type=${@com.db.bms.entity.EntityType@TYPE_COLUMN} and
+       	m.resource_id in
+		<foreach item="item" index="index" collection="resourceIds" open="(" separator="," close=")">
+    		#{item}
+    	</foreach>
+    ) 
+	</if>    
+   	<include refid="filterSearch"/>
+   	<!-- 
+   	<include refid="filterByOperatorForRead"/>
+   	 
+   	<include refid="filterByResAlloc"></include>
+   	-->
+   	order by col.update_time desc, col.column_no desc
+   	
+	<include refid="pageSuffix"/>
+</select>
+
+<select id="getColumnCountByTemplateId" resultType="java.lang.Integer" parameterType="java.lang.Long">
+ 	select count(1) from bus_column c where c.template_id=#{templateId}
+</select>
+
+<!-- 版块策略 -->
+<!-- <select id="findColumnWithStrategy" resultMap="mapColumExt"  parameterType="com.db.bms.entity.Column">
+	<include refid="pagePrefix"></include>
+
+	select <include refid="fields2Column"/>,
+	<include refid="com.db.bms.dao.StrategyMapper.fields2Strategy"/>
+	from bus_column a
+	left join (
+		select *
+		from bus_res_strategy_map rsm 
+		where rsm.type=${@com.db.bms.entity.ResStrategyMap@TYPE_COLUMN} 
+	) rsm on a.column_no=rsm.res_id
+	left join bus_strategy strategy on rsm.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="a.column_no != null">
+    	and a.column_no=#{a.column_no}
+   	</if>
+    <if test="column.groupId != null">
+   	and (column.group_id=#{topic.groupId} or column.operator_no=#{column.groupId})
+   	</if>
+   	<if test="column.companyNo != null">
+	and column.company_no=#{column.companyNo}
+   	</if>
+   	<if test="column.columnName != null and column.columnName != ''">
+    	and column.column_name like &apos;%${columnName}%&apos; escape '_' , see GV-32
+   	</if>
+   	<if test="column.status != null">
+    	and column.status=#{column.status}
+   	</if>
+   	<if test="column.type != null">
+    	and column.type=#{column.type}
+   	</if>
+   	<if test="column.captureFlag != null">
+   	and column.capture_flag=#{column.captureFlag}
+   	</if>
+	order by a.column_no desc
+
+	<include refid="pageSuffix"></include>	
+</select>
+
+<select id="findColumnWithStrategyCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Column">
+	select count(1)
+	from bus_column a
+	left join (
+		select *
+		from bus_res_strategy_map rsm 
+		where rsm.type=${@com.db.bms.entity.ResStrategyMap@TYPE_COLUMN} 
+	) rsm on a.column_no=rsm.res_id
+	left join bus_strategy strategy on rsm.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="a.column_no != null">
+    	and a.column_no=#{a.column_no}
+   	</if>
+    <if test="column.groupId != null">
+   	and (column.group_id=#{column.groupId} or column.operator_no=#{column.groupId})
+   	</if>
+   	<if test="column.companyNo != null">
+	and column.company_no=#{column.companyNo}
+   	</if>
+   	<if test="column.columnName != null and column.columnName != ''">
+    	and column.column_name like &apos;%${columnName}%&apos;  escape '_' , see GV-32
+   	</if>
+   	<if test="column.status != null">
+    	and column.status=#{column.status}
+   	</if>
+   	<if test="column.type != null">
+    	and column.type=#{column.type}
+   	</if>
+   	<if test="column.captureFlag != null">
+   	and column.capture_flag=#{column.captureFlag}
+   	</if>
+</select> -->
+
+</mapper>

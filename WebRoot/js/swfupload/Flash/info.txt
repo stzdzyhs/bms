@@ -1,0 +1,2 @@
+https://github.com/WordPress/secure-swfupload/blob/master/samples/demos/swfupload/swfupload.swf
+swfupload-git-wp.swf

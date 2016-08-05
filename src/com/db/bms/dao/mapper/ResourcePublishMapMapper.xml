@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.ResourcePublishMapMapper" >
+
+<!-- table/param alias:  rpm !!! -->
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="resourcePublishMap" type="com.db.bms.entity.ResourcePublishMap" >
+	<id column="id" property="id"/>
+	<result column="type" property="type"/>
+	<result column="parent_type" property="parentType"/>
+	<result column="parent_id" property="parentId"/>
+	<result column="resource_id" property="resourceId"/>
+	<result column="company_id" property="companyId"/>
+	<result column="region_code" property="regionCode"/>
+	<result column="feature_id" property="featureId"/>
+	<result column="feature_group_id" property="featureGroupId"/>
+	<result column="strategy_no" property="strategyNo"/>
+	<result column="created_by" property="createdBy"/>	
+</resultMap>
+<resultMap id='map2ResourcePublishMap' type='com.db.bms.entity.ResourcePublishMap' >
+	<id column='rpm_id' property='id'/>
+	<result column='rpm_parentType' property='parentType'/>
+	<result column='rpm_parentId' property='parentId'/>
+	<result column='rpm_type' property='type'/>
+	<result column='rpm_resourceId' property='resourceId'/>
+	<result column='rpm_strategyNo' property='strategyNo'/>
+</resultMap>
+
+<resultMap type="com.db.bms.entity.ResourcePublishMap" id="map2ResourcePublishMapExt" extends="map2ResourcePublishMap">
+	<association property="picture" resultMap="com.db.bms.dao.PictureMapper.map2Picture"/>
+	<association property="topic" resultMap="com.db.bms.dao.TopicMapper.map2Topic"/>
+	<association property="album" resultMap="com.db.bms.dao.AlbumMapper.map2Album"/>
+</resultMap>
+
+<sql id='fields2ResourcePublishMap'>
+	rpm.id        rpm_id,
+	rpm.parent_type rpm_parentType,
+	rpm.parent_id rpm_parentId,
+	rpm.type      rpm_type,
+	rpm.resource_id rpm_resourceId,
+	rpm.strategy_no rpm_strategyNo,
+	rpm.created_by	rpm_createdBy
+</sql>
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="rpm.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="rpm.pageUtil.pageOffset==0">
+		    select * from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	</trim>
+	</if>
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	 <if test="rpm.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="rpm.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${rpm.pageUtil.lastRowCount}
+		</when>
+		<otherwise>
+			) row_ where rownum &lt;= ${rpm.pageUtil.lastRowCount}) where rownum_ &gt;
+			${rpm.pageUtil.pageOffset}
+		</otherwise>
+	</choose>
+	 </trim>
+	</if>
+</sql>
+<!-- /////////////////////////////////////////////////////////// -->
+
+<select id="findResourcePublishMapsById" resultMap="resourcePublishMap" parameterType="java.lang.Long">
+select m.id,m.type,m.parent_type,m.parent_id,m.resource_id,m.company_id,m.region_code,m.feature_id,m.feature_group_id,m.strategy_no,m.created_by 
+from bus_resource_publish_map m where id=#{id}
+</select>
+
+
+<select id="findResourcePublishMapById" resultMap="resourcePublishMap" parameterType="java.lang.Long">
+	select m.id,m.type,m.parent_type,m.parent_id,m.resource_id,m.company_id,m.region_code,m.feature_id,m.feature_group_id,m.strategy_no,m.created_by 
+ 	from bus_resource_publish_map m where id in
+   	<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      	#{item}
+   	</foreach>
+</select>
+
+
+<select id="findResourcePublishMapByResId" resultMap="resourcePublishMap" parameterType="java.lang.Long">
+  select id,type,parent_type,parent_id,resource_id,company_id,region_code,feature_id,feature_group_id,strategy_no,created_by  
+  from bus_resource_publish_map m 
+  where 1=1 
+  <if test="type != null">
+  and m.type=#{type}
+  </if>
+  <if test="parentType != null">
+  and m.parent_type=#{parentType}
+  </if>
+  <if test="parentId != null">
+  and m.parent_id=#{parentId}
+  </if>
+  <if test="resourceId != null">
+    and m.resource_id=#{resourceId}
+  </if>
+</select>
+<!-- ///////////////////////////////////////////////////////////////////////////// -->
+<select id="findResourcePublishMapByResId2" resultMap="map2ResourcePublishMap">
+	<include refid="pagePrefix"/>
+
+	select <include refid="fields2ResourcePublishMap"/> 
+	from bus_resource_publish_map rpm 
+	where 1=1 
+	<if test="rpm.type != null">
+	and rpm.type=#{rpm.type}
+	</if>
+	<if test="rpm.parentType != null">
+	and rpm.parent_type=#{rpm.parentType}
+	</if>
+	<if test="rpm.parentId != null">
+	and rpm.parent_id=#{rpm.parentId}
+	</if>
+	<if test="rpm.resourceId != null">
+	and rpm.resource_id=#{resourceId}
+	</if>
+	
+	<include refid="pageSuffix"/>
+</select>
+<select id="findResourcePublishMapByResId2Count" resultType="java.lang.Integer">
+	select count(1) 
+	from bus_resource_publish_map rpm 
+	where 1=1 
+	<if test="rpm.type != null">
+	and rpm.type=#{rpm.type}
+	</if>
+	<if test="rpm.parentType != null">
+	and rpm.parent_type=#{rpm.parentType}
+	</if>
+	<if test="rpm.parentId != null">
+	and rpm.parent_id=#{rpm.parentId}
+	</if>
+	<if test="rpm.resourceId != null">
+	and rpm.resource_id=#{resourceId}
+	</if>
+	<include refid="pageSuffix"/>
+</select>
+<!-- ///////////////////////////////////////////////////////////////////////////// -->
+
+<select id="findPublishedPicture" resultMap="map2ResourcePublishMapExt">
+	<include refid="pagePrefix"/>
+
+	select <include refid="fields2ResourcePublishMap"/>, <include refid="com.db.bms.dao.PictureMapper.fields2Picture"/>
+	from bus_resource_publish_map rpm
+	left join bus_picture picture on rpm.resource_id=picture.id 
+	where rpm.type=${@com.db.bms.entity.EntityType@TYPE_PICTURE}
+	<if test="rpm.resourceId != null">
+	and rpm.resource_id=#{rpm.resourceId}
+	</if>
+	<if test="rpm.parentType != null">
+	and	parent_type=#{rpm.parentType} 	
+	</if>
+	<if test="rpm.parentId != null">
+	and parent_id = #{rpm.parentId}
+	</if>
+	order by	
+   	<if test="rpm.sortKey == 'createTime'">
+    	picture.create_time
+   	</if>
+   	<if test="rpm.sortKey == 'frameNum'">
+        picture.frame_num
+   	</if>
+   	<if test="rpm.sortKey != 'createTime' and  rpm.sortKey != 'frameNum'">
+   		picture.create_time
+   	</if>
+   	<if test="rpm.sortType !=null">
+   		${rpm.sortType}
+   	</if>
+	
+	<include refid="pageSuffix"/>
+</select>
+
+<select id="findPublishedPictureCount" resultType="java.lang.Integer">
+	select count(1)
+	from bus_resource_publish_map rpm
+	left join bus_picture picture on rpm.resource_id=picture.id 
+	where rpm.type=${@com.db.bms.entity.EntityType@TYPE_PICTURE}
+	<if test="rpm.resourceId != null">
+	and rpm.resource_id=#{rpm.resourceId}
+	</if>
+	<if test="rpm.parentType != null">
+	and	parent_type=#{rpm.parentType} 	
+	</if>
+	<if test="rpm.parentId != null">
+	and parent_id = #{rpm.parentId}
+	</if>
+</select>
+<!-- ////////////////////////////////////////// -->
+
+<insert id="addResourcePublishMap"  parameterType="com.db.bms.entity.ResourcePublishMap" >
+  insert into bus_resource_publish_map(
+  		id,
+  		type,
+  		parent_type,
+  		parent_id,
+  		resource_id,
+  		company_id,
+  		region_code,
+  		feature_id,
+  		feature_group_id,
+  		strategy_no,
+  		created_by
+  ) 
+  values(s_resource_publish_map.nextval,
+  		#{type,jdbcType=NUMERIC},#{parentType,jdbcType=NUMERIC},
+  		#{parentId,jdbcType=NUMERIC},
+  		#{resourceId,jdbcType=NUMERIC},
+  		#{companyId,jdbcType=VARCHAR},
+  		#{regionCode,jdbcType=VARCHAR},
+  		#{featureId,jdbcType=VARCHAR},
+  		#{featureGroupId,jdbcType=VARCHAR},
+  		#{strategyNo,jdbcType=VARCHAR},
+  		#{createdBy,jdbcType=NUMERIC}
+  )
+</insert>
+
+<update id="updateResourcePublishMap" parameterType="com.db.bms.entity.ResourcePublishMap">
+ update bus_resource_publish_map set 
+ 	type=#{type},
+ 	parent_id=#{parentId},
+ 	resource_id=#{resourceId,jdbcType=VARCHAR},
+ 	company_id=#{companyId,jdbcType=VARCHAR},
+ 	region_code=#{regionCode,jdbcType=VARCHAR},
+ 	feature_id=#{featureId,jdbcType=VARCHAR},
+ 	feature_group_id=#{featureGroupId,jdbcType=VARCHAR},
+ 	strategy_no=#{strategyNo,jdbcType=VARCHAR}, 
+ 	created_by=#{createdBy,jdbcType=NUMERIC} 
+ where id=#{id}
+</update>
+
+<update id="updateResourcePublishMapByParentId" parameterType="com.db.bms.entity.ResourcePublishMap">
+ update bus_resource_publish_map set company_id=#{companyId,jdbcType=VARCHAR},
+ 	region_code=#{regionCode,jdbcType=VARCHAR},feature_id=#{featureId,jdbcType=VARCHAR},
+ 	feature_group_id=#{featureGroupId,jdbcType=VARCHAR},
+ 	strategy_no=#{strategyNo,jdbcType=VARCHAR},
+ 	created_by=#{createdBy,jdbcType=NUMERIC}
+ where type=#{type} and parent_type=#{parentType} and parent_id=#{parentId}
+</update>
+
+<delete id="deleteResourcePublishMaps" parameterType="java.lang.Long">
+  delete from bus_resource_publish_map m where 1=1 
+  <if test="type != null">
+  and m.type=#{type}
+  </if>
+  <if test="parentType != null">
+  and m.parent_type=#{parentType}
+  </if>
+  <if test="parentId != null">
+  and m.parent_id=#{parentId}
+  </if>
+  <if test="resourceId != null">
+    and m.resource_id=#{resourceId}
+  </if>
+</delete>
+
+<select id="findResourcePublishMapCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.ResourcePublishMap">
+   select count(1) from bus_resource_publish_map m where 1=1 
+   <if test="type != null">
+   and m.type=#{type}
+   </if>
+   <if test="resourceId != null">
+   and m.resource_id=#{resourceId}
+   </if>
+</select>
+
+<select id="findResourcePublishMaps" resultMap="resourcePublishMap"  parameterType="com.db.bms.entity.ResourcePublishMap">
+	    <choose>
+		  <when test="pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+   select m.id,m.type,m.parent_type,m.parent_id,m.resource_id,m.company_id,m.region_code,m.feature_id,m.feature_group_id,m.created_by 
+   from bus_resource_publish_map m where 1=1 
+      <if test="type != null">
+   and m.type=#{type}
+   </if>
+   <if test="resourceId != null">
+   and m.resource_id=#{resourceId}
+   </if>
+   order by m.id desc 
+   
+      <choose>
+		<when test="pageUtil.pageOffset==0">
+			)where rownum &lt;= ${pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${pageUtil.lastRowCount}) where rownum_ &gt;
+			${pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select>
+
+<delete id="deleteResourcePublishMapsById" parameterType="java.lang.Long">
+   delete from bus_resource_publish_map where id in
+      <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+<select id="getPublishCountByStrategyNo" resultType="java.lang.Integer"  parameterType="java.lang.Long">
+	select count(1) from bus_resource_publish_map where STRATEGY_NO = '${strategyNo}' or STRATEGY_NO like '%,${strategyNo},%' or STRATEGY_NO like '%,${strategyNo}' or STRATEGY_NO like '${strategyNo},%'
+</select>
+
+</mapper>

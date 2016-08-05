@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.FeacodeGroupMapMapper">
+
+<resultMap type="com.db.bms.entity.FeacodeGroupMap" id="feacodeGroupMap">
+	<id 	column="CODE_GROUMP_no" 				  property="feacodeGroupMapNo"/>
+	<result column="CODE_GROUMP_feature_code_no"      property="featureCodeNo"/>
+	<result column="CODE_GROUMP_group_no"    	 	  property="groupNo"/>
+</resultMap>
+
+<resultMap type="com.db.bms.entity.FeacodeGroupMap" id="mapFeacodeGroupMap" extends="feacodeGroupMap">
+	<association property="featureCode" javaType="com.db.bms.entity.FeatureCode">
+		<id		column="FEATURECODE_feature_code_no" 	property="featureCodeNo"/>
+		<result column="FEATURECODE_feature_code_val" 	property="featureCodeVal"/>
+		<result column="FEATURECODE_feature_code_type"  property="featureCodeType"/>
+	    <result column="FEATURECODE_feature_code_desc"  property="featureCodeDesc" />
+	    <result column="FEATURECODE_create_time" 		property="createTime" />
+	    <result column="FEATURECODE_operator_no" 		property="operatorNo" />
+	    <result column="FEATURECODE_update_time" 		property="updateTime" />
+	    <result column="FEATURECODE_group_id" 			property="groupId" />
+	    <result column="FEATURECODE_status" 			property="status" />
+	</association>
+</resultMap>
+	
+<sql id="fieldsFeacodeGroupMap">
+	bus_feacode_group_map.feacode_group_map_no   	CODE_GROUMP_no,
+	bus_feacode_group_map.feature_code_no   		CODE_GROUMP_feature_code_no,
+	bus_feacode_group_map.group_no				CODE_GROUMP_group_no
+</sql>
+
+<sql id="fieldsFeatureCode">
+	bus_feature_code.feature_code_no   		FEATURECODE_feature_code_no,
+	bus_feature_code.feature_code_val	  	FEATURECODE_feature_code_val,
+	bus_feature_code.feature_code_type	  	FEATURECODE_feature_code_type,
+	bus_feature_code.feature_code_desc	  	FEATURECODE_feature_code_desc,
+	bus_feature_code.operator_no	  		FEATURECODE_operator_no,
+	bus_feature_code.create_time	  		FEATURECODE_create_time,
+	bus_feature_code.update_time	  		FEATURECODE_update_time,
+	bus_feature_code.group_id	  			FEATURECODE_group_id,
+	bus_feature_code.status 	  			FEATURECODE_status
+</sql>
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="feacodeGroupMap.pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="feacodeGroupMap.pageUtil.pageOffset==0">
+		         select *  from (
+		      </when>
+		      <otherwise>
+		     	 select * from (select row_.*, rownum rownum_ from (
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="feacodeGroupMap.pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="feacodeGroupMap.pageUtil.pageOffset==0">
+		         )where rownum &lt;= ${feacodeGroupMap.pageUtil.lastRowCount}
+		      </when>
+		      <otherwise>
+		     	 ) row_ where rownum &lt;= ${feacodeGroupMap.pageUtil.lastRowCount}) where rownum_ &gt; ${feacodeGroupMap.pageUtil.pageOffset}
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+
+<sql id="filterSearch">
+	<if test="feacodeGroupMap.groupNo != null and feacodeGroupMap.groupNo != ''">
+		and bus_feacode_group_map.group_no = #{feacodeGroupMap.groupNo}
+	</if>
+	<if test="feacodeGroupMap.featureCodeVal != null and feacodeGroupMap.featureCodeVal != ''">
+		and bus_feature_code.feature_code_val like &apos;%${feacodeGroupMap.featureCodeVal}%&apos;
+	</if>
+</sql>
+	
+<select id="getFeatureCodeGroupsCount" 
+		parameterType="com.db.bms.entity.FeacodeGroupMap" 
+		resultType="java.lang.Integer">
+	select count(*) from bus_feacode_group_map 
+	left join bus_feature_code on bus_feacode_group_map.feature_code_no=bus_feature_code.feature_code_no
+	where 1=1
+	<include refid="filterSearch" />
+</select>
+
+<select id="getFeacodeGroupMaps"
+		parameterType="com.db.bms.entity.FeacodeGroupMap"
+		resultMap="mapFeacodeGroupMap">
+<include refid="pagePrefix"/>
+	select <include refid="fieldsFeacodeGroupMap"/>, <include refid="fieldsFeatureCode"/>
+	from bus_feacode_group_map 
+	left join bus_feature_code on bus_feacode_group_map.feature_code_no=bus_feature_code.feature_code_no	
+	where 1=1
+	<include refid="filterSearch" />
+	order by bus_feacode_group_map.feature_code_no
+<include refid="pageSuffix"/>
+</select>
+
+<select id="getFeacodeOutGroupsCount" 
+		parameterType="com.db.bms.entity.FeacodeGroupMap" 
+		resultType="java.lang.Integer">
+	select count(*) from bus_feacode_group_map 
+	left join bus_feature_code on bus_feacode_group_map.feature_code_no=bus_feature_code.feature_code_no
+	where
+	bus_feacode_group_map.group_no &lt;&gt; #{feacodeGroupMap.groupNo}
+</select>
+
+<select id="getFeacodeOutGroups"
+		parameterType="com.db.bms.entity.FeacodeGroupMap"
+		resultMap="mapFeacodeGroupMap">
+	select <include refid="fieldsFeacodeGroupMap"/>, <include refid="fieldsFeatureCode"/>
+	from bus_feacode_group_map 
+	left join bus_feature_code on bus_feacode_group_map.feature_code_no=bus_feature_code.feature_code_no
+	where 
+	bus_feacode_group_map.group_no &lt;&gt; #{feacodeGroupMap.groupNo}
+	order by bus_feacode_group_map.feature_code_no
+</select>
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	select S_FEATURECODE_MAP.NEXTVAL from dual
+</select>
+
+<insert id="addFeacodeGroupMap" parameterType="com.db.bms.entity.FeacodeGroupMap">
+	insert into bus_feacode_group_map values (
+		#{featureCodeGroupMap.feacodeGroupMapNo},
+		#{featureCodeGroupMap.featureCodeNo},
+		#{featureCodeGroupMap.groupNo}
+	)
+</insert>
+
+<delete id="delete">
+	delete from bus_feacode_group_map where group_no=#{groupNo} and feature_code_no in
+	<foreach item="item" index="index" collection="featureCodeNos" open="(" separator="," close=")">
+		#{item}
+	 </foreach>
+</delete>
+
+<delete id="deleteGroupNos" parameterType="java.lang.Long">
+	delete from bus_feacode_group_map where group_no in
+	<foreach item="item" index="index" collection="groupNos" open="(" separator="," close=")">
+		#{item}
+ 	</foreach>
+</delete>
+
+<delete id="deleteFeaNos" parameterType="java.lang.Long">
+	delete from bus_feacode_group_map where feature_code_no in
+	<foreach item="item" index="index" collection="feaNos" open="(" separator="," close=")">
+		#{item}
+ 	</foreach>
+</delete>
+
+</mapper>

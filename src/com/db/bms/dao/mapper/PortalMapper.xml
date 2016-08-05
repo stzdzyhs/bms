@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+<mapper namespace="com.db.bms.dao.PortalMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="portal" type="com.db.bms.entity.Portal" >
+	<result column="sys_no" property="sysNo"/>
+	<result column="sys_id" property="sysId"/>
+	<result column="sys_name" property="sysName"/>
+	<result column="status" property="status"/>
+	<result column="sys_url" property="sysUrl"/>
+    <result column="create_time" property="createTime" />
+    <result column="update_time" property="updateTime" />
+    <result column="operator_no" property="operatorNo" />
+    <result column="company_no" property="companyNo" />
+</resultMap>
+
+<resultMap type="com.db.bms.entity.Portal" id="portalChild" extends="portal">
+  <association property="company" column="company_no" select="com.db.bms.dao.CompanyMapper.findCompanyByNo" ></association>
+  <association property="operator" column="operator_no" select="com.db.bms.dao.OperatorMapper.findOperatorById" ></association>
+</resultMap>
+
+<select id="findPortalBySysId" resultMap="portalChild" parameterType="java.lang.String">
+select sys_no,sys_id,sys_name,sys_url,status,operator_no,company_no,create_time,update_time
+from opt_portal p where sys_id=#{sysId}
+</select>
+<select id="findPortalById" resultMap="portalChild" parameterType="java.lang.Long">
+  select sys_no,sys_id,sys_name,sys_url,status,operator_no,company_no,create_time,update_time
+  from opt_portal p where sys_no=#{sysNo}
+</select>
+
+<select id="findPortalsById" resultMap="portal" parameterType="java.lang.Long">
+   select sys_no,sys_id,sys_name,sys_url,status,operator_no,company_no,create_time,update_time
+   from opt_portal p where sys_no in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<select id="findPortalCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Portal">
+    select count(1) from opt_portal p
+    where 1=1
+    <if test="companyNo != null">
+      and p.company_no=#{companyNo}
+    </if> 
+    <if test="operatorNo != null">
+      and p.operator_no=#{operatorNo}
+    </if> 
+    <if test="sysId != null and sysId != ''">
+       and p.sys_id like &apos;%${sysId}%&apos;
+    </if>
+    <if test="sysName != null and sysName != ''">
+       and p.sys_name like &apos;%${sysName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if>
+    <if test="status != null">
+       and p.status=#{status}
+    </if>
+
+</select>
+
+<select id="findPortals" resultMap="portalChild"  parameterType="com.db.bms.entity.Portal">
+  select sys_no,sys_id,sys_name,sys_url,status,operator_no,company_no,create_time,update_time
+  from opt_portal p
+  where 1=1 
+    <if test="companyNo != null">
+      and p.company_no=#{companyNo}
+    </if> 
+    <if test="operatorNo != null">
+      and p.operator_no=#{operatorNo}
+    </if> 
+    <if test="sysId != null and sysId != ''">
+       and p.sys_id like &apos;%${sysId}%&apos;
+    </if>
+    <if test="sysName != null and sysName != ''">
+       and p.sys_name like &apos;%${sysName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if>
+    <if test="status != null">
+       and p.status=#{status}
+    </if>
+     order by p.sys_no desc
+     
+	<if test="pageUtil.paging == true" >
+		limit ${pageUtil.pageOffset},${pageUtil.pageSize}
+	</if>		 
+</select>
+
+<select id="getPortalCountByIdOrName" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Portal">
+   select count(1) from opt_portal where 1=1 
+   <if test="sysNo != null" >
+        and sys_no != #{sysNo} 
+   </if> 
+    <if test="sysId != null and sysId != ''">
+       and sys_id=#{sysId}
+    </if>
+    <if test="sysName != null and sysName != ''">
+       and sys_name=#{sysName}
+    </if>
+</select>
+
+<insert id="addPortal"  parameterType="com.db.bms.entity.Portal" >
+  insert into opt_portal(sys_no,sys_id,sys_name,sys_url,status,operator_no,company_no,create_time)
+  values(s_portal.Nextval,#{sysId},#{sysName},#{sysUrl},#{status},#{operatorNo},#{companyNo},#{createTime})
+</insert>
+
+<update id="updatePortal" parameterType="com.db.bms.entity.Portal" >
+  update opt_portal set sys_id=#{sysId},sys_name=#{sysName},status=#{status},sys_url=#{sysUrl},
+  update_time=#{updateTime},company_no=#{companyNo}
+  where sys_no=#{sysNo}
+</update>
+
+<update id="updatePortalStatus" parameterType="com.db.bms.entity.Portal" >
+ update opt_portal set status=#{status},update_time=#{updateTime}
+ where sys_no in
+    <foreach item="item" index="index" collection="sysNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</update>
+
+<delete id="deletePortalsById" parameterType="java.lang.Long">
+   delete from opt_portal where sys_no in 
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+
+</mapper>

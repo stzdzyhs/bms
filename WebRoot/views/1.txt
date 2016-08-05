@@ -1,0 +1,180 @@
+Index: opermgmt/client/clientList.jsp
+===================================================================
+--- opermgmt/client/clientList.jsp	(revision 682)
++++ opermgmt/client/clientList.jsp	(working copy)
+@@ -96,7 +96,7 @@
+ 							art.dialog.alert("该CA卡或者所包含的下属网络被操作员引用，不能删除！");
+ 						}else if (rsobj.desc == 'role') {
+ 							art.dialog.alert("该运营商或者所包含的下属CA卡被角色引用，不能删除！");
+-						}else if(rsObj.desc == 'reference'){
++						}else if(rsobj.desc == 'reference'){
+ 							art.dialog.alert("该CA卡被策略引用，不能删除！");
+ 						}else {
+ 							art.dialog.alert("删除失败！");
+Index: opermgmt/featureCode/featureCodeList.jsp
+===================================================================
+--- opermgmt/featureCode/featureCodeList.jsp	(revision 682)
++++ opermgmt/featureCode/featureCodeList.jsp	(working copy)
+@@ -29,6 +29,31 @@
+ 
+ <script src="${path }/js/checkbox.js"></script>
+ <script type="text/javascript">
++
++function beforeDialogOpen() {
++	alert("before dialog open");
++	return false;
++}
++function loadedHandler() {
++	//alert("loaded");
++	var function1 = $("#eUploadBody").click;
++	if(function1==null) {
++		alert("????");
++	}
++	
++	$("#eUploadBody").click(function() {
++		var x = beforeDialogOpen();
++		if(x==true) {
++			if(function1!=null) {
++				function1();
++			}
++		}
++		else {
++			alert("dilog is not open...");
++		}
++		
++	});
++}
+ $(document).ready(function(){
+ 	$("#featureCodeVal").keyup(function(){
+ 		var featureCodeVal = $(this).val();
+@@ -67,7 +92,11 @@
+ 		button_height: 22,
+ 		button_window_mode: SWFUpload.WINDOW_MODE.TRANSPARENT,
+ 		button_cursor: SWFUpload.CURSOR.HAND,
++		
++		button_action : SWFUpload.BUTTON_ACTION.NONE,
++		swfupload_loaded_handler: loadedHandler
+ 	};
++
+ 		swfu1 = createFileUpload(settings1);
+ 		swfu1.beforeUpload=function(queue) {
+ 			if(queue.length>1) {
+@@ -82,8 +111,27 @@
+ 				saveToDb();
+ 			});
+ 		}
++	
++	var function1 = $("#eUploadBody").click;
++	if(function1==null) {
++		alert("????");
++	}
++	
++	$("#eUploadBody").click(function() {
++		var x = beforeDialogOpen();
++		if(x==true) {
++			if(function1!=null) {
++				function1();
++			}
++		}
++		else {
++			alert("dilog is not open...");
++		}
++		
+ });	
+ 
++});	
++
+ //特征码入库
+ function saveToDb () {
+ 	var fileName = $('#txtFileName').val(); 
+@@ -165,7 +213,7 @@
+ 					if(rsobj.result=="true"){
+ 						art.dialog.alert("删除成功！", goBack);
+ 					}else{
+-						if(rsObj.desc == 'reference'){
++						if(rsobj.desc == 'reference'){
+ 							art.dialog.alert("该特征码被策略引用，不能删除！");
+ 						}else{
+ 							art.dialog.alert("删除失败！");
+@@ -492,4 +540,4 @@
+ 
+ </body>
+ </html>
+-<script src="${path }/js/ToolTip.js"></script>
+\ No newline at end of file
++<script src="${path }/js/ToolTip.js"></script>
+Index: picmgmt/album/albumList.jsp
+===================================================================
+--- picmgmt/album/albumList.jsp	(revision 682)
++++ picmgmt/album/albumList.jsp	(working copy)
+@@ -491,9 +491,9 @@
+ 		</tr>
+ 	  </c:if>
+       	<c:forEach items="${list}" var="a">
+-      	 <input type="hidden" name="oldStatus${a.albumNo}" id="oldStatus${a.albumNo}" value="${a.status}" />
+-      	 	<input type="hidden" name="captureFlag${a.albumNo}" id="captureFlag${a.albumNo}" value="${a.captureFlag}" />
+-      	 	<input type="hidden" name="templateId${a.albumNo}" id="templateId${a.albumNo}" value="${a.templateId}" />
++			<input type="hidden" disabled="disabled" name="oldStatus${a.albumNo}" id="oldStatus${a.albumNo}" value="${a.status}" />
++      	 	<input type="hidden" disabled="disabled" name="captureFlag${a.albumNo}" id="captureFlag${a.albumNo}" value="${a.captureFlag}" />
++      	 	<input type="hidden" disabled="disabled" name="templateId${a.albumNo}" id="templateId${a.albumNo}" value="${a.templateId}" />
+         <tr>
+           <td align="center"><input type="checkbox" name="albumNos" value="${a.albumNo}">
+           </td>
+Index: picmgmt/publish/pubMgmt.jsp
+===================================================================
+--- picmgmt/publish/pubMgmt.jsp	(revision 682)
++++ picmgmt/publish/pubMgmt.jsp	(working copy)
+@@ -17,6 +17,7 @@
+ 
+ <script src="${path }/js/checkbox.js"></script>
+  <script src="${path }/js/win/win.js" type="text/javascript"></script>
++<script src="${path }/js/common.js"></script>
+  
+  <script src="${path }/js/picmgmt/publish/publish.js"></script>
+ <script type="text/javascript">
+@@ -38,7 +39,7 @@
+ 	art.dialog.confirm('你确认删除操作？', function(){
+ 			var options = {
+ 				url: "${path }/picmgmt/publish/resourcePublishDelete.action" + param,
+-				dataType: 'html',
++			dataType: 'json',
+ 				beforeSend: function() {
+ 					art.dialog.through({
+ 						id: 'broadcastLoading',
+@@ -51,10 +52,9 @@
+ 					art.dialog.list['broadcastLoading'].close();
+ 					art.dialog.alert("删除失败！");
+ 				},
+-				success: function(data) {
++			success: function(rsobj) {
+ 					art.dialog.list['broadcastLoading'].close();
+-					eval("var rsobj = "+data+";");
+-					if(rsobj.result=="true"){
++				if(isResultSucc(rsobj)){
+ 						art.dialog.alert("删除成功！", goBack);
+ 					}else{
+ 						if (rsobj.authText != null && rsobj.authText != ""){
+@@ -78,7 +78,6 @@
+ 
+ 
+ function detail(publishId){
+-
+ 	art.dialog.open("${path }/picmgmt/publish/resourcePublishDetail.action?publishId=" + publishId, 
+ 			{
+ 				title: "发布详情", 
+@@ -85,7 +84,6 @@
+ 				width: 750,
+ 				height: 450,
+ 				lock: true
+-
+ 			});
+ }
+ 
+@@ -101,7 +99,6 @@
+ 				close:function(){
+ 					refresh();
+ 				}
+-
+ 			});
+ }
+ 

@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.TopicColumnMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="column" type="com.db.bms.entity.TopicColumn" >
+<id column="id" property="id"/>
+<result column="show_order" property="showOrder"/>
+<result column="column_name" property="columnName"/>
+<result column="status" property="status"/>
+<result column="topic_id" property="topicId"/>
+<result column="operator_no" property="operatorNo"/>
+<result column="company_no" property="companyNo"/>
+<result column="group_id" property="groupId"/>
+<result column="create_time" property="createTime"/>
+<result column="update_time" property="updateTime"/>
+</resultMap>
+
+
+<resultMap type="com.db.bms.entity.TopicColumn" id="columnChild" extends="column">
+  <association property="company" column="company_no" select="com.db.bms.dao.CompanyMapper.findCompanyByNo" ></association>
+  <association property="operator" column="operator_no" select="com.db.bms.dao.OperatorMapper.findOperatorById" ></association>
+</resultMap>
+
+<select id="findColumnById" resultMap="columnChild" parameterType="java.lang.Long">
+select id,show_order,column_name,status,topic_id,operator_no,company_no,group_id,create_time,update_time 
+from bus_topic_column where id=#{columnId}
+</select>
+
+<select id="findColumnsById" resultMap="column" parameterType="java.lang.Long">
+  select id,show_order,column_name,status,topic_id,operator_no,company_no,group_id,create_time,update_time 
+  from bus_topic_column where id in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<select id="findColumnCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.TopicColumn">
+   select count(1) from bus_topic_column c where 1=1 
+   <if test="groupId != null">
+   and (c.group_id=#{groupId} or c.operator_no=#{groupId})
+   </if>
+   <if test="topicId != null">
+    and c.topic_id=#{topicId}
+   </if>
+   <if test="operatorNo != null">
+     and c.operator_no=#{operatorNo}
+   </if>
+   <if test="columnName != null and columnName != ''">
+     and c.column_name like &apos;%${columnName}%&apos; 
+   </if>
+   <if test="status != null">
+     and c.status=#{status}
+   </if>
+</select>
+
+<select id="findColumns" resultMap="columnChild"  parameterType="com.db.bms.entity.TopicColumn">
+	<if test="pageUtil.paging == true" >
+	    <choose>
+		  <when test="pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+	</if>
+     select id,show_order,column_name,status,topic_id,operator_no,company_no,group_id,create_time,update_time 
+     from bus_topic_column c where 1=1 
+   <if test="groupId != null">
+   and (c.group_id=#{groupId} or c.operator_no=#{groupId})
+   </if>
+        <if test="topicId != null">
+    and c.topic_id=#{topicId}
+   </if>
+   <if test="operatorNo != null">
+     and c.operator_no=#{operatorNo}
+   </if>
+   <if test="columnName != null and columnName != ''">
+     and c.column_name like &apos;%${columnName}%&apos; 
+   </if>
+   <if test="status != null">
+     and c.status=#{status}
+   </if>
+     order by c.create_time
+   <if test="sortKey == 'createTime'">
+            ${sortType}
+   </if>
+   <if test="sortKey == 'columnNameKey'">
+           ,c.column_name ${sortType}
+   </if>
+   ,c.show_order
+   <if test="pageUtil.paging == true" >
+      <choose>
+		<when test="pageUtil.pageOffset==0">
+			)where rownum &lt;= ${pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${pageUtil.lastRowCount}) where rownum_ &gt;
+			${pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+	</if>
+</select>
+
+<select id="getColumnCountByName" resultType="java.lang.Integer" parameterType="com.db.bms.entity.TopicColumn">
+select count(1) from bus_topic_column c where 1=1 
+<if test="id != null">
+and c.id!=#{id}
+</if>
+<if test="columnName != null and columnName != ''">
+ and c.column_name=#{columnName}
+</if>
+
+</select>
+
+<insert id="addColumn"  parameterType="com.db.bms.entity.TopicColumn" >
+insert into bus_topic_column(id,show_order,column_name,status,topic_id,operator_no,company_no,group_id,create_time) 
+values(s_topic_column.nextval,#{showOrder},#{columnName},#{status},#{topicId},#{operatorNo},#{companyNo},#{groupId},#{createTime})
+</insert>
+
+<update id="updateColumn" parameterType="com.db.bms.entity.TopicColumn" >
+  update bus_topic_column set show_order=#{showOrder},column_name=#{columnName},status=#{status},topic_id=#{topicId},
+  operator_no=#{operatorNo},company_no=#{companyNo},update_time=#{updateTime} where id=#{id}
+</update>
+
+
+<delete id="deleteColumnsById" parameterType="java.lang.Long">
+   delete from bus_topic_column where id in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+<delete id="deleteColumnByTopicIds" parameterType="java.lang.Long">
+delete from bus_topic_column where topic_id in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+<select id="findResourceColumnNoPublishCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.TopicColumn">
+ select count(1) from bus_topic_column c where 1=1 
+and c.id not in(select m.parent_id from bus_resource_publish_map m where 
+  m.type=${@com.db.bms.entity.EntityType@TYPE_ALBUM} and 
+  m.parent_type=${@com.db.bms.entity.EntityType@TYPE_MENU} and m.resource_id in
+   <foreach item="item" index="index" collection="resourceIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+)
+
+   <if test="col.groupId != null">
+   and (c.group_id=#{col.groupId} or c.operator_no=#{col.groupId})
+   </if>
+   <if test="col.topicId != null">
+    and c.topic_id=#{col.topicId}
+   </if>
+   <if test="col.operatorNo != null">
+     and c.operator_no=#{col.operatorNo}
+   </if>
+   <if test="col.columnName != null and col.columnName != ''">
+     and c.column_name like &apos;%${col.columnName}%&apos; 
+   </if>
+   <if test="col.status != null">
+     and c.status=#{col.status}
+   </if>
+</select>
+
+<select id="findResourceColumnNoPublishsWithTopicIds" resultMap="columnChild"  parameterType="com.db.bms.entity.TopicColumn">
+	<if test="col.pageUtil.paging == true" >
+	    <choose>
+		  <when test="col.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+	</if>
+	select id,show_order,column_name,status,topic_id,operator_no,company_no,group_id,create_time,update_time 
+	from bus_topic_column c where 1=1 
+	and c.id not in(select m.parent_id from bus_resource_publish_map m where 
+	m.type=${@com.db.bms.entity.EntityType@TYPE_ALBUM} 
+	and m.parent_type=${@com.db.bms.entity.EntityType@TYPE_MENU} and m.resource_id in
+   <foreach item="item" index="index" collection="resourceIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+	)
+   <if test="col.groupId != null and topicIds != null">
+   and (c.group_id=#{col.groupId} or c.operator_no=#{col.groupId} or c.topic_id in <foreach item="item" index="index" collection="topicIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>)
+   </if>
+   <if test="col.topicId != null">
+    and c.topic_id=#{col.topicId}
+   </if>
+   <if test="col.operatorNo != null">
+     and c.operator_no=#{col.operatorNo}
+   </if>
+   <if test="col.columnName != null and col.columnName != ''">
+     and c.column_name like &apos;%${col.columnName}%&apos; 
+   </if>
+   <if test="col.status != null">
+     and c.status=#{col.status}
+   </if>
+     order by c.show_order
+   <if test="col.sortKey == 'createTime'">
+           ,c.create_time ${col.sortType}
+   </if>
+   <if test="col.sortKey == 'columnNameKey'">
+           ,c.column_name ${col.sortType}
+   </if>
+   <if test="col.pageUtil.paging == true" >
+      <choose>
+		<when test="col.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${col.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${col.pageUtil.lastRowCount}) where rownum_ &gt;
+			${col.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+	</if>
+</select>
+
+<select id="findResourceColumnNoPublishs" resultMap="columnChild"  parameterType="com.db.bms.entity.TopicColumn">
+	<if test="col.pageUtil.paging == true" >
+	    <choose>
+		  <when test="col.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+	</if>
+select id,show_order,column_name,status,topic_id,operator_no,company_no,group_id,create_time,update_time 
+from bus_topic_column c where 1=1 
+and c.id not in(select m.parent_id from bus_resource_publish_map m where 
+  m.type=${@com.db.bms.entity.EntityType@TYPE_ALBUM} and 
+  m.parent_type=${@com.db.bms.entity.EntityType@TYPE_MENU} and m.resource_id in
+   <foreach item="item" index="index" collection="resourceIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+)
+   <if test="col.groupId != null">
+   and (c.group_id=#{col.groupId} or c.operator_no=#{col.groupId})
+   </if>
+   <if test="col.topicId != null">
+    and c.topic_id=#{col.topicId}
+   </if>
+   <if test="col.operatorNo != null">
+     and c.operator_no=#{col.operatorNo}
+   </if>
+   <if test="col.columnName != null and col.columnName != ''">
+     and c.column_name like &apos;%${col.columnName}%&apos; 
+   </if>
+   <if test="col.status != null">
+     and c.status=#{col.status}
+   </if>
+     order by c.show_order
+   <if test="col.sortKey == 'createTime'">
+           ,c.create_time ${col.sortType}
+   </if>
+   <if test="col.sortKey == 'columnNameKey'">
+           ,c.column_name ${col.sortType}
+   </if>
+   <if test="col.pageUtil.paging == true" >
+      <choose>
+		<when test="col.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${col.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${col.pageUtil.lastRowCount}) where rownum_ &gt;
+			${col.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+	</if>
+</select>
+
+</mapper>

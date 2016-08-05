@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.TopicMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="topic" type="com.db.bms.entity.Topic" >
+	<id column="id" property="id"/>
+	<result column="topic_id" property="topicId" />
+	<result column="topic_name" property="topicName"/>
+	<result column="topic_cover" property="topicCover"/>
+	<result column="check_code" property="checkCode"/>
+	<result column="type" property="type"/>
+	<result column="status" property="status"/>
+	<result column="topic_desc" property="topicDesc"/>
+	<result column="capture_flag" property="captureFlag"/>
+	<result column="operator_no" property="operatorNo"/>
+	<result column="company_no" property="companyNo"/>
+	<result column="group_id" property="groupId"/>
+	<result column="template_id" property="templateId"/>
+	<result column="create_time" property="createTime"/>
+	<result column="update_time" property="updateTime"/>
+</resultMap>
+
+<resultMap type="com.db.bms.entity.Topic" id="topicChild" extends="topic">
+	<association property="company" column="company_no" select="com.db.bms.dao.CompanyMapper.findCompanyByNo" ></association>
+	<association property="operator" column="operator_no" select="com.db.bms.dao.OperatorMapper.findOperatorById" ></association>
+	<association property="template" column="template_id" select="com.db.bms.dao.TemplateMapper.findTemplateById" ></association>
+</resultMap>
+
+<resultMap id='map2Topic' type='com.db.bms.entity.Topic'>
+	<id column='topic_id' property='id'/>
+	<result column='topic_operatorNo' property='operatorNo'/>
+	<result column='topic_companyNo' property='companyNo'/>
+	<result column='topic_groupId' property='groupId'/>
+	<result column='topic_templateId' property='templateId'/>
+	<result column='topic_createTime' property='createTime'/>
+	<result column='topic_updateTime' property='updateTime'/>
+	<result column='topic_topicId' property='topicId'/>
+	<result column='topic_topicName' property='topicName'/>
+	<result column='topic_topicCover' property='topicCover'/>
+	<result column='topic_checkCode' property='checkCode'/>
+	<result column='topic_type' property='type'/>
+	<result column='topic_status' property='status'/>
+	<result column='topic_topicDesc' property='topicDesc'/>
+	<result column='topic_captureFlag' property='captureFlag'/>
+</resultMap>
+
+<resultMap id='map2TopicExt' type='com.db.bms.entity.Topic' extends="map2Topic">
+	<association property="strategy" resultMap="com.db.bms.dao.StrategyMapper.map2Strategy"/>
+	<association property="operator" resultMap="com.db.bms.dao.OperatorMapper.map2Operator" />
+	<association property="company" resultMap="com.db.bms.dao.CompanyMapper.map2Company"/>
+</resultMap>
+
+<sql id='fields2Topic'>
+	topic.operator_no            topic_operatorNo,
+	topic.company_no             topic_companyNo,
+	topic.group_id               topic_groupId,
+	topic.template_id            topic_templateId,
+	topic.create_time            topic_createTime,
+	topic.update_time            topic_updateTime,
+	topic.id            		 topic_id,
+	topic.topic_id               topic_topicId,
+	topic.topic_name             topic_topicName,
+	topic.topic_cover            topic_topicCover,
+	topic.check_code             topic_checkCode,
+	topic.type                   topic_type,
+	topic.status                 topic_status,
+	topic.topic_desc             topic_topicDesc,
+	topic.capture_flag           topic_captureFlag
+</sql>
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<!-- 
+	<if test="topic.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="topic.pageUtil.pageOffset==0">
+		    select * from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	</trim>
+	</if>
+ 	-->	
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="topic.pageUtil.paging == true" >
+		limit ${topic.pageUtil.pageOffset},${topic.pageUtil.pageSize} 
+	<!-- 
+    <trim prefix="">
+	<choose>
+		<when test="topic.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${topic.pageUtil.lastRowCount}
+		</when>
+		<otherwise>
+			) row_ where rownum &lt;= ${topic.pageUtil.lastRowCount}) where rownum_ &gt;
+			${topic.pageUtil.pageOffset}
+		</otherwise>
+	</choose>
+	</trim>
+	 -->
+	</if>
+</sql>
+
+<select id="findTopicById" resultMap="topicChild" parameterType="java.lang.Long">
+	select *  
+  	from bus_topic  
+	where id=#{topicId}
+</select>
+
+<select id="findTopicsById" resultMap="map2Topic" parameterType="java.lang.Long">
+  	select <include refid="fields2Topic"></include> 
+   	from bus_topic topic where id in
+   	<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+    	#{item}
+   	</foreach>
+</select>
+
+<select id="findTopicCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Topic">
+	select count(1)
+    from bus_topic topic
+    where 1=1 
+    <if test="topic.groupId != null and (topic.allocResourceIds != null and topic.allocResourceIds.size &gt; 0)">
+    and (topic.group_id=#{topic.groupId} or topic.operator_no=#{topic.groupId} or topic.id in
+      	<foreach item="item" index="index" collection="topic.allocResourceIds" open="(" separator="," close=")">
+      	#{item}
+     	</foreach>)
+    </if> 	
+    <if test="topic.groupId != null and (topic.allocResourceIds == null or topic.allocResourceIds.size == 0)">
+   	and (topic.group_id=#{topic.groupId} or topic.operator_no=#{topic.groupId})
+   	</if>   	
+	<if test="topic.groupId == null and topic.allocResourceIds != null and topic.allocResourceIds.size &gt; 0">
+      	and topic.id in
+      	<foreach item="item" index="index" collection="topic.allocResourceIds" open="(" separator="," close=")">
+      	#{item}
+     	</foreach>
+   	</if>
+   	<if test="topic.groupId == null and topic.allocResourceIds == null">
+      	<if test="topic.operatorNo != null">
+       	and topic.operator_no=#{topic.operatorNo}
+      	</if>
+   	</if>
+   	<if test="topic.companyNo != null">
+	and topic.company_no=#{topic.companyNo}
+   	</if>
+   	<if test="topic.topicName != null and topic.topicName != ''">
+    	and topic.topic_name like &apos;%${topic.topicName}%&apos; <!-- escape '_' , see GV-32 -->
+   	</if>
+
+   	<if test="topic.status != null">
+    	and topic.status=#{topic.status}
+   	</if>
+   	<if test="topic.type != null">
+    	and topic.type=#{topic.type}
+   	</if>
+   	<if test="topic.captureFlag != null">
+   	and topic.capture_flag=#{topic.captureFlag}
+   	</if>
+</select>
+
+<select id="findTopics" resultMap="map2TopicExt"  parameterType="com.db.bms.entity.Topic">
+	<include refid="pagePrefix"/>
+	
+	select <include refid="fields2Topic"/>,
+		   <include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>, 
+		   <include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>
+    from bus_topic topic
+	left join bus_company company on topic.company_no = company.company_no
+	left join sys_operator operator on topic.operator_no = operator.operator_no     
+    where 1=1 
+    <if test="topic.groupId != null and (topic.allocResourceIds != null and topic.allocResourceIds.size &gt; 0)">
+    and (topic.group_id=#{topic.groupId} or topic.operator_no=#{topic.groupId} or topic.id in
+      	<foreach item="item" index="index" collection="topic.allocResourceIds" open="(" separator="," close=")">
+      	#{item}
+     	</foreach>)
+    </if>	
+    <if test="topic.groupId != null and (topic.allocResourceIds == null or topic.allocResourceIds.size == 0)">
+   	and (topic.group_id=#{topic.groupId} or topic.operator_no=#{topic.groupId})
+   	</if>   
+	<if test="topic.groupId == null and topic.allocResourceIds != null and topic.allocResourceIds.size &gt; 0">
+      	and topic.id in
+      	<foreach item="item" index="index" collection="topic.allocResourceIds" open="(" separator="," close=")">
+      	#{item}
+     	</foreach>
+   	</if>
+   	<if test="topic.groupId == null and topic.allocResourceIds == null">
+      	<if test="topic.operatorNo != null">
+       	and topic.operator_no=#{topic.operatorNo}
+      	</if>
+   	</if>
+   		<if test="topic.companyNo != null">
+	and topic.company_no=#{topic.companyNo}
+   	</if>
+   	<if test="topic.topicName != null and topic.topicName != ''">
+    	and topic.topic_name like &apos;%${topic.topicName}%&apos; <!-- escape '_' , see GV-32 -->
+   	</if>
+
+   	<if test="topic.status != null">
+    	and topic.status=#{topic.status}
+   	</if>
+   	<if test="topic.type != null">
+    	and topic.type=#{topic.type}
+   	</if>
+   	<if test="topic.captureFlag != null">
+   	and topic.capture_flag=#{topic.captureFlag}
+   	</if>
+	order by topic.create_time desc, topic.id desc
+
+	<include refid="pageSuffix"/>       
+</select>
+
+<!-- findTopicWithStrategy -->
+<select id="findTopicWithStrategy" resultMap="map2TopicExt"  parameterType="com.db.bms.entity.Topic">
+	<include refid="pagePrefix"></include>
+
+	select <include refid="fields2Topic"/>,
+	<include refid="com.db.bms.dao.StrategyMapper.fields2Strategy"/>
+	from bus_topic topic
+	left join (
+		select *
+		from bus_res_strategy_map rsm 
+		where rsm.type=${@com.db.bms.entity.ResStrategyMap@TYPE_TOPIC} 
+	) rsm on topic.id=rsm.res_id
+	left join bus_strategy strategy on rsm.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="topic.id != null">
+    	and topic.id=#{topic.id}
+   	</if>
+    <if test="topic.groupId != null">
+   	and (topic.group_id=#{topic.groupId} or topic.operator_no=#{topic.groupId})
+   	</if>
+   	<if test="topic.companyNo != null">
+	and topic.company_no=#{topic.companyNo}
+   	</if>
+   	<if test="topic.topicName != null and topic.topicName != ''">
+    	and topic.topic_name like &apos;%${topicName}%&apos; 
+   	</if>
+   	<if test="topic.status != null">
+    	and topic.status=#{topic.status}
+   	</if>
+   	<if test="topic.type != null">
+    	and topic.type=#{topic.type}
+   	</if>
+   	<if test="topic.captureFlag != null">
+   	and topic.capture_flag=#{topic.captureFlag}
+   	</if>
+	order by topic.id desc
+
+	<include refid="pageSuffix"></include>	
+</select>
+
+<select id="findTopicWithStrategyCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Topic">
+	select count(1)
+	from bus_topic topic
+	left join (
+		select *
+		from bus_res_strategy_map rsm 
+		where rsm.type=${@com.db.bms.entity.ResStrategyMap@TYPE_TOPIC} 
+	) rsm on topic.id=rsm.res_id
+	left join bus_strategy strategy on rsm.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="topic.id != null">
+    	and topic.id=#{topic.id}
+   	</if>
+    <if test="topic.groupId != null">
+   	and (topic.group_id=#{topic.groupId} or topic.operator_no=#{topic.groupId})
+   	</if>
+   	<if test="topic.companyNo != null">
+	and topic.company_no=#{topic.companyNo}
+   	</if>
+   	<if test="topic.topicName != null and topic.topicName != ''">
+    	and topic.topic_name like &apos;%${topicName}%&apos; 
+   	</if>
+   	<if test="topic.status != null">
+    	and topic.status=#{topic.status}
+   	</if>
+   	<if test="topic.type != null">
+    	and topic.type=#{topic.type}
+   	</if>
+   	<if test="topic.captureFlag != null">
+   	and topic.capture_flag=#{topic.captureFlag}
+   	</if>
+</select>
+
+<!-- //////////////////////////////////////////////////////////// -->
+
+<insert id="addTopic"  parameterType="com.db.bms.entity.Topic" >
+	insert into bus_topic(id,topic_id,topic_name,topic_cover,check_code,type,
+  		status,topic_desc,capture_flag,operator_no,company_no,group_id,template_id,
+  		create_time,update_time)
+   	values(	s_topic.nextval,#{topic.topicId,jdbcType=VARCHAR},#{topic.topicName,jdbcType=VARCHAR},#{topic.topicCover,jdbcType=VARCHAR},#{topic.checkCode,jdbcType=VARCHAR},
+   		#{topic.type}, #{topic.status},  #{topic.topicDesc,jdbcType=VARCHAR},#{topic.captureFlag},
+  		#{topic.operatorNo},#{topic.companyNo},#{topic.groupId},#{topic.templateId,jdbcType=VARCHAR},
+  		#{topic.createTime}, #{topic.updateTime}
+  	)
+</insert>
+
+<update id="updateTopic" parameterType="com.db.bms.entity.Topic" >
+  update bus_topic set topic_name=#{topic.topicName},topic_cover=#{topic.topicCover,jdbcType=VARCHAR},
+  check_code=#{topic.checkCode,jdbcType=VARCHAR},type=#{topic.type},status=#{topic.status},
+  topic_desc=#{topic.topicDesc,jdbcType=VARCHAR},
+  capture_flag=#{topic.captureFlag},company_no=#{topic.companyNo},template_id=#{topic.templateId,jdbcType=VARCHAR},
+  update_time=#{topic.updateTime} where id=#{topic.id}
+</update>
+
+<update id="updateTopicStatus" >
+  	update bus_topic set status=#{status},update_time=#{updateTime} where id in
+	<foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+    	#{item}
+   	</foreach>
+</update>
+
+<delete id="deleteTopicsById" parameterType="java.lang.Long">
+  	delete from bus_topic where id in
+   <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+<select id="findAllTopics" resultMap="map2Topic" parameterType="com.db.bms.entity.Topic">
+	select <include refid="fields2Topic"></include>
+	from bus_topic topic where 1=1 
+	<if test="topic.groupId != null">
+	and (topic.group_id=#{topic.groupId} or topic.operator_no=#{topic.groupId})
+	</if>
+	<if test="topic.companyNo != null">
+	  and topic.company_no=#{topic.companyNo}
+	</if>
+	<if test="topic.operatorNo != null">
+	  and topic.operator_no=#{topic.operatorNo}
+	</if>
+	<if test="topic.status != null">
+	  and topic.status=#{topic.status}
+	</if> 
+	<if test="topic.captureFlag != null">
+	and topic.capture_flag=#{topic.captureFlag}
+	</if>
+	order by topic.id desc
+</select>
+
+<select id="findResourceTopicNoPublishCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Topic">
+   select count(1) from bus_topic t where 1=1 
+   and t.id not in(select m.parent_id from bus_resource_publish_map m where 
+   m.type=${@com.db.bms.entity.EntityType@TYPE_ALBUM} and 
+   m.parent_type=${@com.db.bms.entity.EntityType@TYPE_TOPIC} and m.resource_id in
+      <foreach item="item" index="index" collection="resourceIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+   ) 
+   <if test="topic.groupId != null and topic.allocResourceIds != null and topic.allocResourceIds.size &gt; 0">
+   and (t.group_id=#{topic.groupId} or t.operator_no=#{topic.groupId} or t.id in
+      <foreach item="item" index="index" collection="topic.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>)
+   </if>
+   <if test="topic.groupId != null and (topic.allocResourceIds == null or topic.allocResourceIds.size == 0)">
+   and (t.group_id=#{topic.groupId} or t.operator_no=#{topic.groupId} )
+   </if>
+   <if test="topic.groupId == null and topic.allocResourceIds != null and topic.allocResourceIds.size &gt; 0">
+       or t.id in
+      <foreach item="item" index="index" collection="topic.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="topic.groupId == null and topic.allocResourceIds == null">
+      <if test="topic.operatorNo != null">
+       and t.operator_no=#{topic.operatorNo}
+      </if>
+   </if>
+   <if test="topic.companyNo != null">
+     and t.company_no=#{topic.companyNo}
+   </if>
+   <if test="topic.topicName != null and topic.topicName != ''">
+     and t.topic_name like &apos;%${topic.topicName}%&apos; 
+   </if>
+   <if test="topic.status != null">
+     and t.status=#{topic.status}
+   </if>
+   <if test="topic.type != null">
+     and t.type=#{topic.type}
+   </if>
+   <if test="topic.captureFlag != null">
+   and t.capture_flag=#{topic.captureFlag}
+   </if>
+</select>
+
+<select id="findResourceTopicNoPublishs" resultMap="topicChild"  parameterType="com.db.bms.entity.Topic">
+	<if test="topic.pageUtil.paging == true" >
+	    <choose>
+		  <when test="topic.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+	</if>
+  select t.id,t.topic_name,t.topic_cover,t.check_code,t.type,t.status,t.topic_desc,t.capture_flag,t.operator_no,t.company_no,t.group_id,t.template_id,t.create_time,t.update_time
+  from bus_topic t where 1=1 
+  and t.id not in(select m.parent_id from bus_resource_publish_map m where 
+  m.type=${@com.db.bms.entity.EntityType@TYPE_ALBUM} and 
+  m.parent_type=${@com.db.bms.entity.EntityType@TYPE_TOPIC} and m.resource_id in
+        <foreach item="item" index="index" collection="resourceIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+  ) 
+   <if test="topic.groupId != null and topic.allocResourceIds != null and topic.allocResourceIds.size &gt; 0">
+   and (t.group_id=#{topic.groupId} or t.operator_no=#{topic.groupId} or t.id in
+      <foreach item="item" index="index" collection="topic.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>)
+   </if>
+   <if test="topic.groupId != null and (topic.allocResourceIds == null or topic.allocResourceIds.size == 0)">
+   and (t.group_id=#{topic.groupId} or t.operator_no=#{topic.groupId} )
+   </if>
+   <if test="topic.groupId == null and topic.allocResourceIds != null and topic.allocResourceIds.size &gt; 0">
+       or t.id in
+      <foreach item="item" index="index" collection="topic.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="topic.groupId == null and topic.allocResourceIds == null">
+      <if test="topic.operatorNo != null">
+       and t.operator_no=#{topic.operatorNo}
+      </if>
+   </if>
+   <if test="topic.companyNo != null">
+     and t.company_no=#{topic.companyNo}
+   </if>
+   <if test="topic.topicName != null and topic.topicName != ''">
+     and t.topic_name like &apos;%${topic.topicName}%&apos; 
+   </if>
+   <if test="topic.status != null">
+     and t.status=#{topic.status}
+   </if>
+   <if test="topic.type != null">
+     and t.type=#{topic.type}
+   </if>
+   <if test="topic.captureFlag != null">
+   and t.capture_flag=#{topic.captureFlag}
+   </if>
+       order by t.id desc
+       	<if test="topic.pageUtil.paging == true" >
+      <choose>
+		<when test="topic.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${topic.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${topic.pageUtil.lastRowCount}) where rownum_ &gt;
+			${topic.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+	  </if>
+</select>
+
+<select id="getTopicCountByTemplateId" resultType="java.lang.Integer" parameterType="java.lang.Long">
+ select count(1) from bus_topic t where t.template_id=#{templateId}
+</select>
+</mapper>
+

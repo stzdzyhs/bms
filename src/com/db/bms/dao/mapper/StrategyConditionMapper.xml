@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       "
+    &quot;       "
+<![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.StrategyConditionMapper">
+
+<!--  strategy_condition alias: sc -->  
+
+<!-- Result Map 数据库映射到实体类-->
+<resultMap id="map2StrategyCondition" type="com.db.bms.entity.StrategyCondition" >
+	<id     column="sc_id" property="id"/>
+	<result column="sc_strategyNo" property="strategyNo"/>
+	<result column="sc_conditionType" property="conditionType"/>
+	<result column="sc_conditionId" property="conditionId"/>
+</resultMap>
+
+<resultMap id="map2StrategyConditionExt" type="com.db.bms.entity.StrategyCondition" extends="map2StrategyCondition" >
+	<association property="cardRegion" resultMap="com.db.bms.dao.CardRegionMapper.map2CardRegion"/>
+	<association property="company" resultMap="com.db.bms.dao.CompanyMapper.map2Company"/>
+	<association property="space" resultMap="com.db.bms.dao.SpaceMapper.map2Space"/>
+	<association property="featureCode" resultMap="com.db.bms.dao.FeatureCodeMapper.map2FeatureCode"/>
+	<association property="client" resultMap="com.db.bms.dao.ClientMapper.map2Client"/>
+</resultMap>
+
+<sql id="fields2StrategyCondition">
+	sc.id               sc_id,
+	sc.strategy_no      sc_strategyNo,
+	sc.condition_type    sc_conditionType,
+	sc.condition_id      sc_conditionId
+</sql>
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="sc.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="sc.pageUtil.pageOffset==0">
+		    select * from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	</trim>
+	</if>
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="sc.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="sc.pageUtil.pageOffset==0">
+			)where rownum &lt;= sc.pageUtil.lastRowCount}
+		</when>
+		<otherwise>
+			) row_ where rownum &lt;= sc.pageUtil.lastRowCount}) where rownum_ &gt;
+			sc.pageUtil.pageOffset}
+		</otherwise>
+	</choose>
+	</trim>
+	</if>
+</sql>
+<!-- ////////////////////////////////////////////////////////////////// -->
+
+<select id="findStrategyConditionCountByTypeNos" parameterType="com.db.bms.entity.StrategyCondition" resultType="java.lang.Integer">
+	select count(1) from bus_strategy_condition sc where sc.condition_type = #{type} and sc.condition_id in 
+	<foreach item="item" index="index" collection="typeNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<select id="findStrategyConditionEntityCount" parameterType="com.db.bms.entity.StrategyCondition" resultType="java.lang.Integer">
+	select count(1) from bus_strategy_condition sc 
+	where sc.strategy_no = #{sc.strategyNo}
+	and sc.condition_type=#{sc.conditionType}
+</select>
+
+<select id="findStrategyConditionEntity" parameterType="com.db.bms.entity.StrategyCondition" 
+			resultMap="map2StrategyConditionExt">
+	<include refid="pagePrefix"/>		
+
+	select <include refid="fields2StrategyCondition"/>,
+	<choose>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_CARD_REGION"> 
+			<include refid="com.db.bms.dao.CardRegionMapper.fields2CardRegion"/>
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_COMPANY"> 
+			<include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_SPACE"> 
+			<include refid="com.db.bms.dao.SpaceMapper.fields2Space"/>
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_FEATURE_CODE"> 
+			<include refid="com.db.bms.dao.FeatureCodeMapper.fields2FeatureCode"/>
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_CLIENT"> 
+			<include refid="com.db.bms.dao.ClientMapper.fields2Client"/>
+		</when>
+		<otherwise>
+			1
+		</otherwise>
+	</choose>
+	from bus_strategy_condition sc
+	<choose>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_CARD_REGION"> 
+			left join bus_card_region region on sc.condition_id = region.id
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_COMPANY"> 
+			left join bus_company company on sc.condition_id = company.company_no
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_SPACE"> 
+			left join bus_space space on sc.condition_id = space.space_no
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_FEATURE_CODE"> 
+			left join bus_feature_code featureCode on sc.condition_id = featureCode.feature_code_no
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_CLIENT"> 
+			left join bus_client client on sc.condition_id = client.client_no
+		</when>		
+		<otherwise>
+		</otherwise>
+	</choose>
+	where sc.condition_type=#{sc.conditionType}
+	and sc.strategy_no = #{sc.strategyNo}
+	<choose>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_CARD_REGION"> 
+			and region.id is not null
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_COMPANY"> 
+			and company.company_no is not null
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_SPACE"> 
+			and space.space_no is not null
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_FEATURE_CODE"> 
+			and featureCode.feature_code_no  is not null
+		</when>
+		<when  test="sc.conditionType==@com.db.bms.entity.StrategyCondition@TYPE_CLIENT"> 
+			and client.client_no  is not null
+		</when>		
+		<otherwise>
+		</otherwise>
+	</choose>
+	
+	<include refid="pageSuffix"/>
+</select>
+
+<insert id="addStrategyCondition" parameterType="com.db.bms.entity.StrategyCondition" >
+	insert into bus_strategy_condition(
+		id, 
+		strategy_no, 
+		condition_type, 
+		condition_id
+	) 
+  	values	(	
+  		s_common.nextval, 
+  		#{sc.strategyNo,jdbcType=NUMERIC},
+  		#{sc.conditionType,jdbcType=NUMERIC},
+  		#{sc.conditionId,jdbcType=NUMERIC}
+  	)
+</insert>
+
+<!-- delete strategy condition by strategy no -->
+<delete id="deleteStrategyConditionByStrategyNo" parameterType="java.lang.Long">
+    delete from bus_strategy_condition where STRATEGY_NO in 
+    <foreach item="item" index="index" collection="strategyNos" open="(" separator="," close=")">
+        #{item}
+    </foreach>
+</delete>
+
+<delete id="delStrategyConditionById" parameterType="java.lang.Long" >
+	delete from bus_strategy_condition where id=${id}
+</delete>
+</mapper>

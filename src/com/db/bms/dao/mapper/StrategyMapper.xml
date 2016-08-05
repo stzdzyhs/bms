@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.StrategyMapper">
+
+<!-- Result Map 数据库映射到实体类  --> 
+<resultMap id="strategy" type="com.db.bms.entity.Strategy">   
+	<id column="strategy_no" property="strategyId"/> 
+	<result column="strategy_id" property="strategyId"/> 
+	<result column="strategy_name" property="strategyName"/> 
+	<result column="audit_status" property="auditStatus"/> 
+	<result column="company_no" property="companyNo"/>
+	<result column="create_by" property="createBy"/>
+	<result column="create_time" property="createTime"/>
+	<result column="update_time" property="updateTime"/>
+	<result column="strategy_form" property="strategyForm"/>
+</resultMap>  
+ 
+<!--/////////////// 级联递归查询  一对多 ///////////////-->
+<resultMap type="com.db.bms.entity.Strategy" id="strategyChild" extends="strategy">
+	<association property="parent" select="findInternetByNo" column="PARENT_ID">
+	</association>
+	<association property="operator" select="com.db.bms.dao.OperatorMapper.findOperatorById" column="CREATE_BY">
+	</association>
+	
+	<collection property="cardRegionList" ofType="com.db.bms.entity.CardRegion" select="com.db.bms.dao.CardRegionMapper.getCardRegionByStrategyId" column="strategy_no" >
+	</collection>
+</resultMap>
+
+<resultMap id='map2Strategy' type='com.db.bms.entity.Strategy' >
+	<id column='strategy_strategyNo' property='strategyNo'/>
+	<result column='strategy_strategyId' property='strategyId'/>
+	<result column='strategy_strategyName' property='strategyName'/>
+	<result column='strategy_auditStatus' property='auditStatus'/>
+	<result column='strategy_companyNo' property='companyNo'/>
+	<result column='strategy_createBy' property='createBy'/>
+	<result column='strategy_createTime' property='createTime'/>
+	<result column='strategy_updateTime' property='updateTime'/>
+	<result column='strategy_strategyForm' property='strategyForm'/>
+</resultMap>
+
+<resultMap id='map2StrategyExt' type='com.db.bms.entity.Strategy' extends="map2Strategy">
+	<association property="operator" resultMap="com.db.bms.dao.OperatorMapper.map2Operator"/>
+	<association property="company" resultMap="com.db.bms.dao.CompanyMapper.map2Company"/>
+
+	<collection property="conditionList" resultMap="com.db.bms.dao.StrategyConditionMapper.map2StrategyCondition"/>
+</resultMap>
+
+
+<sql id='fields2Strategy'>
+	strategy.strategy_no         strategy_strategyNo,
+	strategy.strategy_id         strategy_strategyId,
+	strategy.strategy_name       strategy_strategyName,
+	strategy.audit_status        strategy_auditStatus,
+	strategy.company_no          strategy_companyNo,
+	strategy.create_by           strategy_createBy,
+	strategy.create_time         strategy_createTime,
+	strategy.update_time         strategy_updateTime,
+	strategy.strategy_form       strategy_strategyForm
+</sql>
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="strategy.pageUtil.paging == true" >
+		limit ${strategy.pageUtil.pageOffset},${strategy.pageUtil.pageSize} 
+	</if>
+</sql>
+<!-- /////////////////////////////////////////////////////////// -->
+
+ <!-- 序列ID -->
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	SELECT s_common.nextval FROM DUAL
+</select>
+
+<!-- 查询策略 -->
+<select id="findStrategys" parameterType="com.db.bms.entity.Strategy" resultMap="map2StrategyExt">
+	<include refid="pagePrefix"/>
+	
+	select <include refid="fields2Strategy"/>, 
+		   <include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>, 
+		   <include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>
+	from bus_strategy strategy 
+	left join bus_company company on strategy.company_no=company.company_no
+	left join sys_operator operator on strategy.create_by = operator.operator_no 
+	where 1=1
+	<if test="strategy.strategyNo != null" >
+        and strategy.strategy_no  = #{strategy.strategyNo} 
+    </if>	
+	<if test="strategy.strategyId != null" >
+        and strategy.strategy_id  = #{strategy.strategyId} 
+    </if>	
+	<if test="strategy.strategyName != null  and strategy.strategyName != '' " >
+        and strategy.STRATEGY_NAME like &apos;%${strategy.strategyName}%&apos; 
+    </if>	
+    <if test="strategy.companyNo != null " >
+        and strategy.COMPANY_NO = #{strategy.companyNo} 
+    </if>
+    <if test="strategy.operatorNo != null and strategy.createBy != null">
+    	and (strategy.CREATE_BY = #{strategy.createBy} or strategy.CREATE_BY = #{strategy.operatorNo})
+    </if>
+    <if test="strategy.createBy != null and strategy.operatorNo == null " >
+        and strategy.CREATE_BY = #{strategy.createBy} 
+    </if>
+    <if test="strategy.auditStatus != null " >
+        and strategy.AUDIT_STATUS = #{strategy.auditStatus} 
+    </if>
+    order by strategy.update_time desc, strategy.strategy_no desc
+    <include refid="pageSuffix"/>
+</select>
+
+<select id="findStrategysCount" parameterType="com.db.bms.entity.Strategy" resultType="java.lang.Integer">
+	select count(1)
+	from bus_strategy strategy 
+	left join bus_company company on strategy.company_no=company.company_no
+	left join sys_operator operator on strategy.create_by = operator.operator_no 
+	where 1=1
+	<if test="strategy.strategyNo != null" >
+        and strategy.strategy_no  = #{strategy.strategyNo} 
+    </if>	
+	<if test="strategy.strategyId != null" >
+        and strategy.strategy_id  = #{strategy.strategyId} 
+    </if>	
+	<if test="strategy.strategyName != null  and strategy.strategyName != '' " >
+        and strategy.STRATEGY_NAME like &apos;%${strategy.strategyName}%&apos; 
+    </if>	
+    <if test="strategy.companyNo != null " >
+        and strategy.COMPANY_NO = #{strategy.companyNo} 
+    </if>
+    <if test="strategy.operatorNo != null and strategy.createBy != null">
+    	and (strategy.CREATE_BY = #{strategy.createBy} or strategy.CREATE_BY = #{strategy.operatorNo})
+    </if>
+    <if test="strategy.createBy != null and strategy.operatorNo == null " >
+        and strategy.CREATE_BY = #{strategy.createBy} 
+    </if>
+    <if test="strategy.auditStatus != null " >
+        and strategy.AUDIT_STATUS = #{strategy.auditStatus} 
+    </if>
+</select>
+
+<!-- 根据ID查询策略 -->
+<select id="findStrategyByNo" parameterType="com.db.bms.entity.Strategy" resultMap="map2Strategy">
+    select <include refid="fields2Strategy"></include>
+	from bus_strategy strategy
+	where strategy_no=#{strategyNo}
+</select>
+<!-- ////////////////////////////////////////////////////////////////// -->
+
+<select id="findStrategyByNoWithCondition" parameterType="java.lang.Long" resultMap="map2StrategyExt">
+	select <include refid="fields2Strategy"/>, <include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>,
+		<include refid="com.db.bms.dao.StrategyConditionMapper.fields2StrategyCondition"/>
+	from bus_strategy strategy
+    left join bus_company company on strategy.company_no= company.company_no
+    left join bus_strategy_condition sc on strategy.strategy_no= sc.strategy_no
+	where strategy.strategy_no= #{strategyNo}
+</select>
+<!-- ////////////////////////////////////////////////////////////////// -->
+
+<!-- 添加策略 -->
+<insert id="addStrategy"  parameterType="com.db.bms.entity.Strategy" >
+    insert into bus_strategy(
+    	strategy_no,
+<if test="strategy.strategyId!= null" >
+		strategy_id,
+</if>
+		strategy_name,
+		audit_status,
+		company_no,
+		create_by,
+		create_time,
+		update_time,
+		strategy_form
+    ) 
+    values(
+		#{strategy.strategyNo,jdbcType=NUMERIC},
+<if test="strategy.strategyId!= null" >
+		#{strategy.strategyId,jdbcType=VARCHAR},
+</if>		
+		#{strategy.strategyName,jdbcType=VARCHAR},
+		#{strategy.auditStatus,jdbcType=NUMERIC},
+		#{strategy.companyNo,jdbcType=NUMERIC},
+		#{strategy.createBy,jdbcType=NUMERIC},
+		#{strategy.createTime,jdbcType=VARCHAR},
+		#{strategy.updateTime,jdbcType=VARCHAR},
+		#{strategy.strategyForm,jdbcType=NUMERIC}
+    )
+</insert>
+
+<!-- 修改策略 -->
+<update id="updateStrategy" parameterType="com.db.bms.entity.Strategy" >
+update bus_strategy 
+<set>	
+	<if test="strategy.strategyId!= null" >strategy_id=#{strategy.strategyId},</if>
+	<if test="strategy.strategyName!= null" >STRATEGY_NAME=#{strategy.strategyName,jdbcType=VARCHAR},</if>
+	<if test="strategy.auditStatus!= null" >AUDIT_STATUS=#{strategy.auditStatus},</if>
+<!-- 	    COMPANY_NO=#{companyNo,jdbcType=VARCHAR},  -->
+<!-- 	    CREATE_BY=#{createBy,jdbcType=VARCHAR},  -->
+<!-- 	    CREATE_TIME=#{createTime,jdbcType=VARCHAR}, -->
+	<if test="strategy.updateTime!= null" >UPDATE_TIME=#{strategy.updateTime,jdbcType=VARCHAR},</if>
+	<if test="strategy.strategyForm!= null" >STRATEGY_FORM=#{strategy.strategyForm}</if>
+</set>
+    where strategy_no=#{strategy.strategyNo}
+</update>
+
+<!-- 删除策略 -->
+<delete id="deleteStrategysByNo" parameterType="java.lang.Long">
+    delete from bus_strategy where STRATEGY_NO in 
+    <foreach item="item" index="index" collection="strategyNo" open="(" separator="," close=")">
+        #{item}
+    </foreach>
+</delete>
+
+<delete id="deleteStrategyAllCondition">
+  	delete from bus_strategy_condition where strategy_no=#{strategyNo}
+</delete>
+
+<update id="updateStrategyStatus" parameterType="java.lang.Long">
+    update bus_strategy set audit_status = #{status} where STRATEGY_NO in 
+    <foreach item="item" index="index" collection="strategyNos" open="(" separator="," close=")">
+        #{item}
+    </foreach>
+</update>
+
+<select id="findStrategyByNos" parameterType="java.lang.Long" resultMap="map2Strategy">
+	select <include refid="fields2Strategy"/> from bus_strategy strategy where STRATEGY_NO in 
+    <foreach item="item" index="index" collection="strategyNos" open="(" separator="," close=")">
+        #{item}
+    </foreach>
+</select>
+
+</mapper>

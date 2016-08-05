@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.InternetMapper">
+ 
+ 
+<!-- Result Map 数据库映射到实体类  --> 
+<resultMap id="internet" type="com.db.bms.entity.Internet" > 
+	<id column="INTERNET_No" property="internetNo"/>
+	<result column="INTERNET_ID" property="internetId"/>
+	<result column="INTERNET_NAME" property="internetName"/>
+	<result column="INTERNET_DESCRIBE" property="internetDescribe"/> 
+	<result column="CREATE_BY" property="createBy"/> 
+	<result column="CREATE_TIME" property="createTime"/> 
+	<result column="PARENT_ID" property="parentId"/>  
+</resultMap> 
+
+<resultMap id='map2Internet' type='com.db.bms.entity.Internet' >
+	<id column='internet_internetNo' property='internetNo'/>
+	<result column='internet_internetId' property='internetId'/>
+	<result column='internet_internetName' property='internetName'/>
+	<result column='internet_internetDescribe' property='internetDescribe'/>
+	<result column='internet_createBy' property='createBy'/>
+	<result column='internet_createTime' property='createTime'/>
+	<result column='internet_parentId' property='parentId'/>
+	<result column='internet_path' property='path'/>
+</resultMap>
+<sql id='fields2Internet'>
+	internet.internet_no         internet_internetNo,
+	internet.internet_id         internet_internetId,
+	internet.internet_name       internet_internetName,
+	internet.internet_describe   internet_internetDescribe,
+	internet.create_by           internet_createBy,
+	internet.create_time         internet_createTime,
+	internet.parent_id           internet_parentId,
+	internet.path                internet_path,
+	internet.company_no          internet_companyNo
+</sql>
+
+<!--/////////////// 级联递归查询  一对多 ///////////////-->
+<resultMap type="com.db.bms.entity.Internet" id="internetChild" extends="internet">
+  <association property="parent" select="findInternetByNo" column="PARENT_ID">
+  </association>
+  <association property="operator" select="com.db.bms.dao.OperatorMapper.findOperatorById" column="CREATE_BY">
+  </association>
+  
+  <collection property="cardRegionList" ofType="com.db.bms.entity.CardRegion" select="com.db.bms.dao.CardRegionMapper.getCardRegionByInternetNo" column="INTERNET_NO" >
+  </collection>
+</resultMap>
+ 
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="internet.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="internet.pageUtil.pageOffset==0">
+		    select * from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	 </trim>
+	</if>
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	 <if test="internet.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="internet.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${internet.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${internet.pageUtil.lastRowCount}) where rownum_ &gt;
+			${internet.pageUtil.pageOffset}
+		 </otherwise>
+	</choose>
+	 </trim>
+	</if>
+</sql>    
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	SELECT S_COMPANY.NEXTVAL FROM DUAL
+</select> 
+
+<select id="findInternetByNo" parameterType="java.lang.Long" resultMap="internetChild">
+	select c.INTERNET_NO,c.INTERNET_ID,c.INTERNET_NAME,c.INTERNET_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+		from BUS_INTERNET c where c.INTERNET_NO=#{internetNo} 
+</select>
+ 
+ <select id="findInternetsByNo"  resultMap="internet" >
+	select INTERNET_NO,INTERNET_ID,INTERNET_NAME,INTERNET_DESCRIBE,CREATE_BY,CREATE_TIME,PARENT_ID,PATH from BUS_INTERNET  where INTERNET_NO in 
+	 <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+</select> 
+
+<select id="findInternetByParentId" parameterType="java.lang.Long" resultMap="internet">
+	select c.INTERNET_NO,c.INTERNET_ID,c.INTERNET_NAME,c.INTERNET_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+		from BUS_INTERNET c where c.parent_id=#{parentId} 
+</select> 
+
+<select id="findInternetById" resultMap="internetChild" parameterType="java.lang.String">
+ select c.INTERNET_NO,c.INTERNET_ID,c.INTERNET_NAME,c.INTERNET_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+ from BUS_INTERNET c where c.INTERNET_ID=#{internetId}
+</select>
+ 
+<select id="findInternetByIds" resultMap="internetChild" parameterType="java.lang.String">
+ select c.INTERNET_NO,c.INTERNET_ID,c.INTERNET_NAME,c.INTERNET_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+ from BUS_INTERNET c where c.INTERNET_ID in
+ 	 <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+</select>  
+
+<!-- 查询,实体查询   -->
+<select id="findAllInternets"  resultMap="internetChild" parameterType="com.db.bms.entity.Internet">
+	select c.INTERNET_NO,c.INTERNET_ID,c.INTERNET_NAME,c.INTERNET_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID from BUS_INTERNET c where 1=1 
+   <if test="distInternetList != null  and distInternetList.size > 0" >
+       and c.INTERNET_NO in
+       	 <foreach item="item" index="index" collection="distInternetList" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+   </if>
+    order by c.INTERNET_ID
+</select>
+
+<select id="findInternetCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Internet">
+   select count(1) from BUS_INTERNET c where 1=1 
+   <if test="internet.path != null  and internet.path != '' " >
+       and c.path like &apos;${internet.path}%&apos; 
+       and c.path != #{internet.path}
+   </if>
+   <if test="internet.internetName != null  and internet.internetName != '' " >
+       and c.INTERNET_NAME like  &apos;%${internet.internetName}%&apos; escape '_'
+   </if> 
+   <if test="distInternetList != null  and distInternetList.size > 0" >
+       and c.INTERNET_NO in
+       	 <foreach item="item" index="index" collection="distInternetList" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+   </if>
+</select>
+
+<select id="findInternets" resultMap="internetChild"  parameterType="com.db.bms.entity.Internet">
+   	<choose>
+	   <when test="internet.pageUtil.pageOffset==0">
+		     select *  from (
+		</when>
+		<otherwise>
+		     select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	select c.INTERNET_NO,c.INTERNET_ID,c.INTERNET_NAME,c.INTERNET_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID,c.PATH 
+    from BUS_INTERNET c
+    where 1=1 
+   <if test="internet.path != null  and internet.path != '' " >
+       and c.path like &apos;${internet.path}%&apos; 
+       and c.path != #{internet.path}
+   </if>
+   <if test="internet.internetName != null  and internet.internetName != '' " >
+       and c.INTERNET_NAME like  &apos;%${internet.internetName}%&apos; escape '_'
+   </if> 
+   <if test="internet.internetId != null  and internet.internetId != '' " >
+       and c.INTERNET_ID like  &apos;%${internet.internetId}%&apos; escape '_'
+   </if>
+   <if test="distInternetList != null  and distInternetList.size > 0" >
+       and c.INTERNET_NO in
+       	 <foreach item="item" index="index" collection="distInternetList" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+   </if>
+	order by c.create_time,c.path
+	<choose>
+		<when test="internet.pageUtil.pageOffset==0">
+		   )where rownum &lt;= ${internet.pageUtil.lastRowCount}
+		 </when>
+		<otherwise>
+		   ) row_ where rownum &lt;= ${internet.pageUtil.lastRowCount}) where rownum_ &gt; ${internet.pageUtil.pageOffset}
+		</otherwise>
+	</choose>
+</select>
+
+<select id="getInternetCountByIdOrName" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Internet">
+    select count(1) from BUS_INTERNET where 1=1 
+    <if test="internetNo != null  and internetNo > 0 " >
+    and INTERNET_NO != #{internetNo} 
+   </if>
+    <if test="internetId != null  and internetId != '' " >
+    and INTERNET_ID=#{internetId}
+   </if>
+   <if test="internetName != null and internetName != '' " >
+    and INTERNET_NAME=#{internetName}
+   </if>
+</select>
+
+<insert id="addInternet"  parameterType="com.db.bms.entity.Internet" >
+    insert into BUS_INTERNET(INTERNET_NO,INTERNET_ID,INTERNET_NAME,INTERNET_DESCRIBE,CREATE_BY,CREATE_TIME,PARENT_ID,PATH) 
+    values(#{internetNo},#{internetId},#{internetName},#{internetDescribe},#{createBy},#{createTime},#{parentId,jdbcType=VARCHAR},#{path})
+</insert>
+
+<update id="updateInternet" parameterType="com.db.bms.entity.Internet" >
+	update BUS_INTERNET set INTERNET_ID=#{internetId,jdbcType=VARCHAR},INTERNET_NAME=#{internetName,jdbcType=VARCHAR},INTERNET_DESCRIBE=#{internetDescribe,jdbcType=VARCHAR},PARENT_ID=#{parentId,jdbcType=VARCHAR},PATH=#{path,jdbcType=VARCHAR} where INTERNET_NO=#{internetNo}
+</update>
+
+<select id="findInternetsWithSubByNo"  resultMap="internet" >
+    select c.INTERNET_NO,c.INTERNET_ID,c.INTERNET_NAME,c.INTERNET_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID,c.PATH 
+    from BUS_INTERNET c,
+    (select INTERNET_NO,PATH from BUS_INTERNET where INTERNET_NO in 
+   <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    ) c1 
+    where c.INTERNET_NO=c.INTERNET_NO and c.PATH like c1.path || '%'
+</select>
+
+<delete id="deleteInternet" parameterType="com.db.bms.entity.Internet">
+    delete from BUS_INTERNET where 1=1
+    <if test="internetNo != null  and internetNo > 0 " >
+    and INTERNET_NO = #{internetNo} 
+    </if>
+</delete> 
+ 
+<delete id="deleteInternetCardRegionMapByInternetNo">
+  delete from BUS_INTERNET_CARD_REGION_MAP where internet_no=#{internetNo}
+</delete>
+ 
+<delete id="deleteInternetCardRegionMaps">
+delete from BUS_INTERNET_CARD_REGION_MAP where INTERNET_NO=#{internetNo} and region_id in
+   <foreach item="item" index="index" collection="regionIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+ 
+<insert id="addInternetCardRegionMap">
+ insert into BUS_INTERNET_CARD_REGION_MAP(internet_no,region_id) values(#{internetNo},#{regionId})
+</insert>
+ 
+<select id="findInternetCardRegionMapCountByRegionId" resultType="java.lang.Integer">
+   select count(1) from BUS_INTERNET_CARD_REGION_MAP where region_id in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+ 
+<select id="findInternetCountById" resultType="java.lang.Integer">
+   select count(1) from BUS_INTERNET c where c.INTERNET_ID in
+   <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+ 
+<select id="findDistInternetByOperNo" resultMap="internet"  parameterType="java.lang.Long">
+ select c.INTERNET_NO,c.INTERNET_ID,c.INTERNET_NAME,c.INTERNET_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID,c.PATH 
+ from BUS_INTERNET c,sys_operator_Internet o
+ where c.INTERNET_NO=o.INTERNET_NO and o.operator_no=#{operatorNo}
+</select>
+ 
+<!-- ///////////////////////////////////////////////////////////// -->
+ 
+<sql id="fliterSearch">
+<!--    <if test="path != null  and path != '' " > -->
+<!--        and path like &apos;${path}%&apos;  -->
+<!--        and path != #{path} -->
+<!--    </if> -->
+   <if test="internetId!= null  and internetId != '' " >
+       and internet_id like  &apos;%${internetId}%&apos; escape '_'
+   </if>
+   <if test="internetName != null  and internetName != '' " >
+       and internet_name like  &apos;%${internetName}%&apos; escape '_'
+   </if>
+</sql>
+ 
+<sql id="filterByOperatorForRead" >
+	<choose>
+		<when test="curOper.type==null">
+			and 1=0
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin, empty -->
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_INTERNET_ADMIN">
+			and (bus_internet.internet_no = #{curOper.internetNo}) 
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			and (bus_internet.internet_no = #{curOper.internetNo}) 
+		</when>
+		<otherwise>
+			and (1=0)
+		</otherwise>
+	</choose>
+</sql>	
+
+<!-- 查找operator关联internet, 不包括子internet -->
+<select id="findOperatorInternets" resultMap="internet"  parameterType="com.db.bms.entity.Internet">
+	<include refid="pagePrefix"/>
+	
+   	select * from bus_internet where 1=1
+   	<include refid="filterByOperatorForRead"/>
+	<include refid="fliterSearch"/>
+	
+	<include refid="pageSuffix"/>
+</select>
+<select id="findOperatorInternetsCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Internet">
+   	select count(*) from bus_internet where 1=1
+   	<include refid="filterByOperatorForRead"/>
+	<include refid="fliterSearch"/>
+</select>
+<!-- ////////////////////////////////////////////////////////////////////////////// -->
+
+<!-- 网络ID策略 -->
+<!-- <select id="findInternetWithStrategy" resultMap="map2Internet"  parameterType="com.db.bms.entity.Internet">
+	<include refid="pagePrefix"></include>
+
+	select <include refid="fields2Topic"/>,
+	<include refid="com.db.bms.dao.StrategyMapper.fields2Strategy"/>
+	from bus_internet c
+	left join (
+		select *
+		from bus_strategy_condition con 
+		where con.condition_type=${@com.db.bms.entity.StrategyCondition@TYPE_INTERNET}
+	) con on c.internet_id=con.condition_id
+	left join bus_strategy strategy on con.strategy_no = strategy.strategy_no
+	where 1=1;
+   	<if test="c.internetId != null">
+    	and c.internet_id=#{c.internetId}
+   	</if>
+   	<if test="c.internetName != null and c.internetName != ''">
+    	and c.internet_name like &apos;%${internetName}%&apos; escape '_'
+   	</if>
+	order by c.internet_id desc
+
+	<include refid="pageSuffix"></include>	
+</select>
+
+<select id="findInternetWithStrategyCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Internet">
+	select count(1)
+	from bus_internet c
+	left join (
+		select *
+		from bus_strategy_condition con 
+		where con.condition_type=${@com.db.bms.entity.StrategyCondition@TYPE_INTERNET} 
+	) con on c.internet_id=con.condition_id
+	left join bus_strategy strategy on con.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="c.internetId != null">
+    	and c.internet_id=#{c.internetId}
+   	</if>
+   	<if test="c.internetName != null and c.internetName != ''">
+    	and c.internet_name like &apos;%${internetName}%&apos; escape '_'
+   	</if>
+</select> -->
+
+
+<select id="findStrategyInternetNoSelectCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Internet">
+select count(1) 
+from bus_internet internet
+where 1=1
+<if test="strategyNo!=null" >
+	and internet.company_no=(select bus_strategy.company_no from bus_strategy where bus_strategy.strategy_no=#{strategyNo})
+	and internet.internet_no not in ( select sc.condition_id from bus_strategy_condition sc where sc.strategy_no=#{strategyNo} 
+		and sc.condition_type= ${@com.db.bms.entity.StrategyCondition@TYPE_INTERNET} ) 
+</if>
+<if test="strategyNo==null" > <!-- companyNo must no null -->
+	and internet.company_no=#{companyNo}
+</if> 
+<if test="excludeIds != null" >
+	and internet.internet_no not in 
+    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+   		#{item}
+	</foreach>
+</if>
+order by internet.internet_no desc,internet.create_time desc
+</select>
+
+<select id="findStrategyInternetNoSelect" resultMap="map2Internet"  parameterType="com.db.bms.entity.Internet">
+	<include refid="pagePrefix"></include>
+
+select <include refid="fields2Internet"/> 
+from bus_internet internet
+where 1=1
+<if test="strategyNo!=null" > 
+	and internet.company_no=(select bus_strategy.company_no from bus_strategy where bus_strategy.strategy_no=#{strategyNo})
+	and internet.internet_no not in ( select sc.condition_id from bus_strategy_condition sc where sc.strategy_no=#{strategyNo} 
+		and sc.condition_type= ${@com.db.bms.entity.StrategyCondition@TYPE_INTERNET} ) 
+</if>
+<if test="strategyNo==null" > <!-- companyNo must no null -->
+	and internet.company_no=#{companyNo}
+</if> 
+<if test="excludeIds != null" >
+	and internet.internet_no not in 
+    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+   		#{item}
+	</foreach>
+</if>
+order by internet.internet_no desc,internet.create_time desc
+
+	<include refid="pageSuffix"></include>       
+</select>
+
+
+</mapper>

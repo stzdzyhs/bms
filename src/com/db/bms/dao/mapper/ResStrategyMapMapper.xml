@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.ResStrategyMapMapper">
+
+<!-- table/param alias: rsm  -->
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id='ResStrategyMap' type='com.db.bms.entity.ResStrategyMap' >
+	<id     column='ID' property='id'/>
+	<result column='TYPE' property='type'/>
+	<result column='RES_ID' property='resId'/>
+	<result column='STRATEGY_NO' property='strategyNo'/>
+</resultMap>
+ 
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="rsm.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="rsm.pageUtil.pageOffset==0">
+		    select * from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	</trim>
+	</if>
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	 <if test="rsm.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="rsm.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${rsm.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${rsm.pageUtil.lastRowCount}) where rownum_ &gt;
+			${rsm.pageUtil.pageOffset}
+		</otherwise>
+	</choose>
+	 </trim>
+	</if>
+</sql>
+
+<!-- 根据资源ID查询策略 -->
+<select id="findResStrategyMap" resultMap="ResStrategyMap" parameterType="com.db.bms.entity.ResStrategyMap">
+    select
+       a.id,
+       a.type,
+       a.res_id,
+       a.strategy_no
+    from bus_res_strategy_map a where 1=1
+    <if test="type != null and type != ''">
+        and a.type=#{type} 
+    </if>
+    <if test="resId != null and resId != ''">
+        and a.res_id=#{resId}
+    </if>
+</select>
+
+<!-- 添加资源策略 -->
+<insert id="addResStrategyMap"  parameterType="com.db.bms.entity.ResStrategyMap" >
+    insert into BUS_RES_STRATEGY_MAP(
+         ID,
+         TYPE,
+         RES_ID,
+         STRATEGY_NO
+    )values(
+         #{id},
+         #{type},
+         #{resId},
+         #{strategyNo}
+    )
+</insert>
+
+</mapper>

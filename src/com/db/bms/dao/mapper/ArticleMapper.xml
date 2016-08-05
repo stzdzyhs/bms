@@ -1,0 +1,684 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]>
+ -->
+<mapper namespace="com.db.bms.dao.ArticleMapper" >
+
+<!-- Result Map 数据库映射到实体类  , single table result -->
+<resultMap id="mapArticle" type="com.db.bms.entity.Article" >
+	<id     column="Article_article_no"       property="articleNo"/>
+<!-- 	<result column="Article_article_no"       property="articleNo"/> -->
+	<result column="Article_template_id"      property="templateId"/>
+	<result column="Article_article_id"       property="articleId"/>
+	<result column="Article_article_name"     property="articleName"/>
+	<result column="Article_title"            property="title"/>
+	<result column="Article_title2"           property="title2"/>
+	<result column="Article_introduction"     property="introduction"/>
+	<result column="Article_body"             property="body"/>
+	<result column="Article_status"           property="status" />
+
+	<result column="Article_operator_no"      property="operatorNo"/>
+	<result column="Article_company_no"       property="companyNo"  />
+	<result column="Article_create_time"      property="createTime"/>
+	<result column="Article_group_id"		  property="groupId"/>
+	<result column="Article_show_order"       property="showOrder"/>
+</resultMap> 
+
+<!--///////////////////// 连接查询 ////////////////////////
+
+<resultMap id="mapArticleExt" type="com.db.bms.entity.Article">
+	<id     column="Article_article_no"       property="articleNo"/>
+	<result column="Article_article_no"       property="articleNo"/>
+	<result column="Article_template_id"      property="templateId"/>
+	<result column="Article_article_id"       property="articleId"/>
+	<result column="Article_article_name"     property="articleName"/>
+	<result column="Article_title"            property="title"/>
+	<result column="Article_title2"           property="title2"/>
+	<result column="Article_introduction"     property="introduction"/>
+	<result column="Article_body"             property="body"/>
+	<result column="Article_status"           property="status" />
+
+	<result column="Article_operator_no"      property="operatorNo"/>
+	<result column="Article_company_no"       property="companyNo"  />
+	<result column="Article_create_time"      property="createTime"/>
+
+	<result column="Article_group_id"         property="groupId"/>
+	<result column="Article_show_order"       property="showOrder"/>
+	<association property="company" javaType="com.db.bms.entity.Company">
+		<id     column="Company_company_no"       property="companyNo"/>
+	    <result column="Company_company_id"       property="companyId"/>
+	    <result column="Company_company_name"	  property="companyName"/> 
+	  	<result column="Company_company_describe" property="companyDescribe"/>
+	    <result column="Company_create_by"	      property="createBy"/>
+	    <result column="Company_parent_id"        property="parentId"/>
+	    <result column="Company_path"             property="path"/>
+    </association>
+    <association property="operator" column="Operator_operator_no" select="com.db.bms.dao.OperatorMapper.findOperatorById" ></association>
+
+	<collection property="pictures" ofType="com.db.bms.entity.Picture">
+		<id     column="Picture_id"             property="id"/>
+	
+		<result column="Picture_show_order" property="showOrder"/>
+		<result column="Picture_pic_name" property="picName"/>
+		<result column="Picture_pic_path" property="picPath"/>
+		<result column="Picture_check_code" property="checkCode"/>
+		<result column="Picture_status" property="status"/>
+		<result column="Picture_pic_label" property="picLabel"/>
+		<result column="Picture_pic_desc" property="picDesc"/>
+		<result column="Picture_pic_author" property="picAuthor"/>
+		<result column="Picture_pic_source" property="picSource"/>
+		<result column="Picture_vote_flag" property="voteFlag"/>
+		<result column="Picture_video_time" property="videoTime"/>
+		<result column="Picture_frame_num" property="frameNum"/>
+		<result column="Picture_album_no" property="albumNo"/>
+		<result column="Picture_article_no" property="articleNo"/>
+		<result column="Picture_article_no" property="articleNo"/>
+		<result column="Picture_operator_no" property="operatorNo"/>
+		<result column="Picture_company_no" property="companyNo"/>
+		<result column="Picture_create_time" property="createTime"/>
+		<result column="Picture_update_time" property="updateTime"/>
+		<result column="Picture_is_self" property="isSelf"/>
+		<result column="Picture_res_no" property="resNo"/>
+	
+		<association property="operator" javaType="com.db.bms.entity.Operator">
+			<id     column="Operator_operator_no"       property="operatorNo" />
+			<result column="Operator_operator_no"       property="operatorNo"/>
+			<result column="Operator_operator_id"       property="operatorId"/>
+			<result column="Operator_operator_name"     property="operatorName"/>
+			<result column="Operator_operator_pwd"      property="operatorPwd"/>
+			<result column="Operator_type"              property="type"/>
+			<result column="Operator_status"            property="status"/>
+			<result column="Operator_operator_email"    property="operatorEmail"/>
+			<result column="Operator_operator_tel"      property="operatorTel"/>
+			<result column="Operator_operator_describe" property="operatorDescribe"/>
+			<result column="Operator_company_no"        property="companyNo"/>
+			<result column="Operator_create_by"         property="createBy"/>
+			<result column="Operator_create_time"       property="createTime"/>
+		</association>
+	</collection>
+
+</resultMap -->
+<!-- ////////////////////////////////////////////////////////////////////////// -->
+
+<!-- fields -->
+<sql id="fieldsArticle">
+	bus_article.article_no           Article_article_no,
+	bus_article.template_id          Article_template_id,
+	bus_article.article_id           Article_article_id,
+	bus_article.article_name         Article_article_name,
+	bus_article.title                Article_title,
+	bus_article.title2               Article_title2,
+	bus_article.introduction         Article_introduction,
+	bus_article.body                 Article_body,
+	bus_article.status               Article_status,
+	bus_article.operator_no          Article_operator_no,
+	bus_article.company_no           Article_company_no,
+	bus_article.create_time          Article_create_time,
+	bus_article.group_id             Article_group_id,
+	bus_article.show_order  	     Article_show_order
+</sql>
+
+<sql id="fieldsColumn">
+	bus_column.column_no      Column_column_no,
+	bus_column.column_id      Column_column_id,
+	bus_column.column_name    Column_column_name,
+	bus_column.column_desc    Column_column_desc,
+	bus_column.parent_no      Column_parent_no,
+	bus_column.status         Column_status,
+	bus_column.operator_no    Column_operator_no,
+	bus_column.company_no     Column_company_no,
+	bus_column.create_time    Column_create_time
+</sql>
+
+<sql id="fieldsPicture">
+	bus_picture.id          	Picture_id,
+	bus_picture.show_order      Picture_show_order,
+	bus_picture.pic_name    	Picture_pic_name,
+	bus_picture.pic_path    	Picture_pic_path,
+	bus_picture.check_code  	Picture_check_code,
+	bus_picture.status      	Picture_status,
+	bus_picture.pic_label   	Picture_pic_label,
+	bus_picture.pic_desc    	Picture_pic_desc,
+	bus_picture.pic_author  	Picture_pic_author,
+	bus_picture.pic_source  	Picture_pic_source,
+	bus_picture.vote_flag   	Picture_vote_flag ,
+	bus_picture.video_time      Picture_video_time,
+	bus_picture.frame_num       Picture_frame_num,
+	bus_picture.album_no        Picture_album_no,
+	bus_picture.article_no      Picture_article_no,
+	bus_picture.operator_no 	Picture_operator_no,
+	bus_picture.company_no    	Picture_company_no,
+	bus_picture.create_time   	Picture_create_time,
+	bus_picture.update_time   	Picture_update_time,
+	bus_picture.res_no			Picture_res_no
+</sql>
+
+<sql id = "fieldsCompany">
+	bus_company.company_no        Company_company_no,
+	bus_company.company_id        Company_company_id,
+	bus_company.company_name      Company_company_name,	 
+	bus_company.company_describe  Company_company_describe,
+	bus_company.create_by         Company_create_by,	 
+	bus_company.parent_id         Company_parent_id,
+	bus_company.path              Company_path
+</sql>
+
+<sql id="fieldsOperator">
+	sys_operator.operator_no        Operator_operator_no,
+	sys_operator.operator_id        Operator_operator_id,
+	sys_operator.operator_name      Operator_operator_name, 
+	sys_operator.operator_pwd       Operator_operator_pwd,
+	sys_operator.operator_email     Operator_operator_email, 
+	sys_operator.operator_tel       Operator_operator_tel,
+	sys_operator.operator_describe  Operator_operator_describe,
+	sys_operator.type               Operator_type,
+	sys_operator.status             Operator_status 
+</sql>
+
+<resultMap id='map2Article' type='com.db.bms.entity.Article' >
+	<id     column='article_articleNo' property='articleNo'/>
+	<result column='article_articleId' property='articleId'/>
+	<result column='article_articleName' property='articleName'/>
+	<result column='article_title' property='title'/>
+	<result column='article_title2' property='title2'/>
+	<result column='article_introduction' property='introduction'/>
+	<result column='article_body' property='body'/>
+	<result column='article_status' property='status'/>
+	<result column='article_operatorNo' property='operatorNo'/>
+	<result column='article_companyNo' property='companyNo'/>
+	<result column='article_createTime' property='createTime'/>
+	<result column='article_updateTime' property='updateTime'/>
+	<result column='article_templateId' property='templateId'/>
+	<result column='article_groupId' property='groupId'/>
+	<result column='article_showOrder' property='showOrder'/>
+</resultMap>
+
+<resultMap id='map2ArticleExt' type='com.db.bms.entity.Article' extends="map2Article" >
+	<association property="operator" resultMap="com.db.bms.dao.OperatorMapper.map2Operator"/>
+	<association property="company" resultMap="com.db.bms.dao.CompanyMapper.map2Company"/>
+	<collection property="pictures" resultMap="com.db.bms.dao.PictureMapper.map2Picture"/>
+</resultMap>
+
+<!-- to extend picture.company and picture.operator -->
+<resultMap id='map2ArticleExt2' type='com.db.bms.entity.Article' extends="map2Article" >
+	<association property="company" resultMap="com.db.bms.dao.CompanyMapper.map2Company"/>
+	<collection property="pictures" resultMap="com.db.bms.dao.PictureMapper.map2PictureExt"/>
+</resultMap>
+
+<sql id='fields2Article'>
+	article.article_no           article_articleNo,
+	article.article_id           article_articleId,
+	article.article_name         article_articleName,
+	article.title                article_title,
+	article.title2               article_title2,
+	article.introduction         article_introduction,
+	article.body                 article_body,
+	article.status               article_status,
+	article.operator_no          article_operatorNo,
+	article.company_no           article_companyNo,
+	article.create_time          article_createTime,
+	article.update_time          article_updateTime,
+	article.template_id          article_templateId,
+	article.group_id             article_groupId,
+	article.show_order           article_showOrder
+</sql>
+
+<!-- ////////////////////////////////////////////////////////////////////////// -->
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+</sql>
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="article.pageUtil.paging == true" >
+		limit ${article.pageUtil.pageOffset},${article.pageUtil.pageSize} 
+	</if>
+</sql>
+<!-- //////////////////////////////////////////////////////////////////////// -->
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	select S_ARTICLE.nextval from dual
+</select>
+
+<!-- select by no(primary key) -->
+<select id="selectByNo" parameterType="java.lang.Long" resultMap="mapArticle">
+	select <include refid="fieldsArticle"/>
+	from BUS_ARTICLE where article_no = ${no}
+</select>
+
+<select id="selectByNoV2" parameterType="java.lang.Long" resultMap="map2ArticleExt2">
+	select <include refid="fields2Article"/>,
+		   <include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>, 
+		   <include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>
+	from bus_article article
+	left join bus_company company on article.company_no = company.company_no
+	left join sys_operator operator on article.operator_no=operator.operator_no 
+	where article.article_no = ${no}
+</select>
+<!-- ///////////////////////////////////////////////////////////////////////////// -->
+
+<select id="selectByNoWithPicturesCount" resultType="java.lang.Integer">
+   	select count(*) 
+	from bus_article 
+	left join bus_picture on bus_article.article_no = bus_picture.article_no 
+	left join sys_operator on bus_picture.operator_no = sys_operator.operator_no
+	where bus_article.article_no = #{article.articleNo}
+</select>
+
+<select id="selectByNoWithPictures" parameterType="com.db.bms.entity.Article" resultMap="map2ArticleExt2">
+	<include refid="pagePrefix" />
+   	select <include refid="fields2Article"/>, 
+   		   <include refid="com.db.bms.dao.PictureMapper.fields2Picture"/>,
+		   <include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>
+	from bus_article article
+	left join bus_picture picture on article.article_no = picture.article_no 
+	left join sys_operator operator on picture.operator_no = operator.operator_no
+	where article.article_no = #{article.articleNo}
+	<include refid="pageSuffix"/>
+</select>
+<!-- ///////////////////////////////////////////////////////////////////////////// -->
+
+<!-- select by no (primary key) arrau -->
+<select id="selectByNos"  resultMap="mapArticle" >
+	select <include refid="fieldsArticle"/> from BUS_ARTICLE where article_no in 
+	<foreach item="item" index="index" collection="nos" open="(" separator="," close=")">
+    	#{item}
+    </foreach>
+</select>
+
+<select id="queryOperatorAdminPermission" resultType="java.lang.Integer" parameterType="com.db.bms.entity.Article" >
+	<choose>
+		<when test="article.curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin  -->
+			select 1 from dual
+		</when>
+		<when test="article.curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+			select count(*) from BUS_ARTICLE where company_no = #{article.companyNo} and article_no=#{article.articleNo}) 
+		</when>
+		<when test="article.curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			select 0 from dual 
+		</when>
+		<otherwise>
+			select 0 from dual 
+		</otherwise>
+	</choose>
+</select>
+
+<!-- 查询,实体查询   -->
+<!-- ******************************************************** -->
+<!--  sql fragment -->
+<!-- ******************************************************** -->
+<sql id="filterSearch">
+   <if test="article.articleId != null  and article.articleId != '' " >
+       and article.article_id like &apos;%${article.articleId}%&apos;
+   </if>
+   <if test="article.articleName != null  and article.articleName != '' " >
+       and article.article_name like &apos;%${article.articleName}%&apos;
+   </if>
+   <if test="article.title != null  and article.title != '' " >
+       and article.title like &apos;%${article.title}%&apos;
+   </if>
+   <if test="article.status != null and article.status >= 0">
+       and article.status=${article.status}
+   </if>
+   <if test="article.templateId != null and article.templateId == -1">
+       and article.template_id is not null
+   </if>
+   <if test="article.companyNo != null and article.companyNo != ''">
+       and article.company_no=${article.companyNo}
+   </if>
+<!--    <if test="article.operatorNo != null and article.operatorNo != ''">
+       and article.operator_no=${article.operatorNo}
+   </if> -->
+   <if test="article.groupId != null and article.allocResourceIds != null and article.allocResourceIds.size &gt; 0">
+   		and (article.group_id=#{article.groupId} or article.operator_no=#{article.groupId} or article.article_no in
+      <foreach item="item" index="index" collection="article.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>)
+   </if>
+   <if test="article.groupId != null and (article.allocResourceIds == null or article.allocResourceIds.size == 0)">
+   		and (article.group_id=#{article.groupId} or article.operator_no=#{article.groupId})
+   </if>
+   <if test="article.groupId == null and article.allocResourceIds != null and article.allocResourceIds.size &gt; 0">
+      and article.article_no in
+      <foreach item="item" index="index" collection="article.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="article.groupId == null and (article.allocResourceIds == null or article.allocResourceIds.size == 0)">
+      <if test="article.operatorNo != null">
+       and article.operator_no=#{article.operatorNo}
+      </if>
+   </if>
+   
+</sql>
+
+<sql id="filterByOperatorForRead" >
+	<choose>
+		<when test="article.curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin, empty -->
+		</when>
+		<when test="article.curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+			and (article.company_no = #{article.curOper.companyNo}) 
+		</when>
+		<when test="article.curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			and (article.company_no = #{article.curOper.companyNo}) 
+		</when>
+		<otherwise>
+			and (1=0)
+		</otherwise>
+	</choose>
+</sql>	
+
+<sql id="filterByOperatorForWrite"> <!-- write: update/delete -->
+	<choose>
+		<when test="article.curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin, empty -->
+		</when>
+		<when test="article.curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+			and (article.company_no = #{article.curOper.companyNo}) 
+		</when>
+		<when test="article.curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			and (article.operator_no = #{article.curOper.operatorNo}) 
+		</when>
+		<otherwise>
+		</otherwise>
+	</choose>
+</sql>	
+<!-- ******************************************************** -->
+
+<select id="getArticleCountByIdOrName" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Article">
+	select count(*) from BUS_ARTICLE where 1=1 
+    <if test="article.articleNo != null  and article.articleNo > 0" >
+    and article_no != #{article.articleNo} 
+   	</if>
+    <if test="article.articleId != null  and article.articleId != '' " >
+    and article_id=#{article.articleId}
+   	</if>
+   	<if test="article.articleName != null and article.articleName != '' " >
+    and article_name=#{article.articleName}
+   	</if>
+</select>
+
+<!-- TODO: .. -->
+<select id="getArticleRefCount" resultType="java.lang.Integer"  parameterType="java.lang.Long">
+	select 0 from dual
+</select>
+
+<select id="getArticleMaxResNo" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Article">
+	select max(res_no) from bus_picture where article_no=#{article.articleNo}
+</select>
+
+<select id="selectArticleCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Article">
+   select count(1) from bus_article article
+   where 1=1  
+   <include refid="filterSearch"/>
+<!--    <include refid="filterByOperatorForRead"/>
+ --></select>
+
+<select id="selectArticles" resultMap="map2ArticleExt"  parameterType="com.db.bms.entity.Article">
+	<include refid="pagePrefix" />
+
+   	select <include refid="fields2Article"/>,
+		   <include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>, 
+		   <include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>   	
+   	from bus_article article
+	left join bus_company company on article.company_no=company.company_no
+	left join sys_operator operator on article.operator_no = operator.operator_no
+	where 1=1
+   	<include refid="filterSearch"/>
+   	order by article.update_time desc, article.show_order
+
+	<include refid="pageSuffix"/>
+</select>
+<!-- //////////////////////////////////////////////////////////////////////// -->
+
+<insert id="addArticle"  parameterType="com.db.bms.entity.Article" >
+    insert into BUS_ARTICLE(article_no, template_id, article_id, article_name, introduction, 
+    	title, title2, body, operator_no, company_no, create_time, update_time, group_id,show_order) values(
+    	#{article.articleNo, jdbcType=NUMERIC},
+    	#{article.templateId, jdbcType=NUMERIC},
+    	#{article.articleId, jdbcType=VARCHAR},
+    	#{article.articleName, jdbcType=VARCHAR},
+    	#{article.introduction, jdbcType=VARCHAR},
+    	#{article.title, jdbcType=VARCHAR},
+    	#{article.title2, jdbcType=VARCHAR},
+    	#{article.body, jdbcType=VARCHAR},
+    	#{article.operatorNo, jdbcType=NUMERIC},
+    	#{article.companyNo, jdbcType=NUMERIC},
+    	#{article.createTime, jdbcType=VARCHAR},
+    	#{article.updateTime, jdbcType=VARCHAR},
+		#{article.groupId, jdbcType=NUMERIC},
+		#{article.showOrder, jdbcType=NUMERIC} )
+</insert>
+
+<update id="updateArticle" parameterType="com.db.bms.entity.Article" >
+	update bus_article
+	<set> 		
+		template_id=#{article.templateId, jdbcType=NUMERIC},
+		article_name=#{article.articleName, jdbcType=VARCHAR},
+		introduction=#{article.introduction, jdbcType=VARCHAR},
+		title=#{article.title, jdbcType=VARCHAR},		
+		title2=#{article.title2, jdbcType=VARCHAR},
+		status=#{article.status,jdbcType=INTEGER},
+		show_order=#{article.showOrder,jdbcType=NUMERIC},
+		update_time=#{article.updateTime, jdbcType=VARCHAR}
+ 		<if test="article.body!=null">,body=#{article.body, jdbcType=VARCHAR}</if> 
+	</set> 
+	where article_no=#{article.articleNo}
+</update>
+
+<update id="updateArticleBody" parameterType="com.db.bms.entity.Article" >
+	update bus_article article
+	<set>
+		update_time = #{article.updateTime, jdbcType=VARCHAR}
+		body =#{article.body, jdbcType=VARCHAR} 
+	</set> 
+	where article_no=#{article.articleNo}
+	<include refid="filterByOperatorForWrite"></include>
+</update>
+
+<update id="updateStatus">
+	update bus_article set status=#{status}
+	<if test="#{updateTime!=null and updateTime!='' }">
+		, update_time=#{updateTime}
+	</if> 
+	where article_no in
+ 	<foreach item="item" index="index" collection="articleNos" open="(" separator="," close=")">
+      	#{item}
+   	</foreach>
+</update>
+
+<update id="audit" >
+	update BUS_ARTICLE article set status=${article.status}
+	<if test="#{updateTime!=null and updateTime!='' }">
+		, update_time=#{article.updateTime}
+	</if>	
+	where article_no in 
+	<foreach item="item" index="index" collection="nos" open="(" separator="," close=")">
+		#{item}
+	</foreach>
+	<!--  <include refid="filterByOperatorForWrite"/> -->
+	<!--     <include refid="filterByOperatorForWrite"/> -->
+</update>
+
+<!-- <select id="findArticlesWithSubByNo"  resultMap="articleResult" > -->
+<!--     select c.Article_no,c.Article_id,c.Article_name,c.Article_describe,c.create_by,c.create_time,c.parent_id,c.path  -->
+<!--     from bus_Article c, -->
+<!--     (select Article_no,path from bus_Article where Article_no in  -->
+<!--    <foreach item="item" index="index" collection="list" open="(" separator="," close=")"> -->
+<!--       #{item} -->
+<!--     </foreach> -->
+<!--     ) c1  -->
+<!--     where c.Article_no=c.Article_no -->
+<!-- </select> -->
+
+<!-- ******************************************************** -->
+<!-- delete article, article.curOper muset set -->
+<delete id="deleteArticle" parameterType="com.db.bms.entity.Article">
+    delete from BUS_ARTICLE article where article_no=#{article.articleNo} 
+    <include refid="filterByOperatorForWrite"/>
+</delete>
+<!-- ///////////////////////////////////////////////////////////// -->
+
+<select id="getAllArticlesCount" resultType="java.lang.Integer">
+	select count(*) from BUS_ARTICLE
+</select>
+
+<sql id="filterArticleSearch">
+   <if test="article.articleName != null  and article.articleName != '' " >
+       and bus_article.article_name like &apos;%${article.articleName}%&apos;
+   </if>
+</sql>
+
+<select id="selectArticleForColumn" resultMap="map2ArticleExt"  parameterType="com.db.bms.entity.Article">
+	<include refid="pagePrefix" />
+	select <include refid="fields2Article"/>,
+ 		   <include refid="com.db.bms.dao.CompanyMapper.fields2Company"/>, 
+		   <include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/>
+	from bus_article article
+	left join sys_operator operator on article.operator_no = operator.operator_no
+	left join bus_company company on article.company_no = company.company_no
+	where 1=1
+	<include refid="filterSearch" />
+	and not exists (select 'x' from BUS_COLUMN_ARTICLE_MAP c where c.ARTICLE_NO = article.article_no and c.COLUMN_NO = #{article.columnNo}) 
+	order by article.show_order, article.create_time desc
+	<include refid="pageSuffix" />
+</select>
+
+<select id="selectArticleForColumnCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Article">
+	select count(1) from bus_article article
+	left join sys_operator operator on article.operator_no = operator.operator_no
+	where 1=1
+	<include refid="filterSearch" />
+	and not exists (select 'x' from BUS_COLUMN_ARTICLE_MAP c where c.ARTICLE_NO = article.article_no and c.COLUMN_NO = #{article.columnNo})
+</select>
+
+<select id="findColumnPublishArticleCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Article">
+   select count(1) from bus_article article,bus_resource_publish_map m 
+   where article.article_no=m.resource_id 
+   <if test="parentType != null">
+   and m.parent_type=#{parentType}
+   </if>
+   <if test="parentId != null">
+   and m.parent_id=#{parentId}
+   </if>
+   <if test="type != null">
+   and m.type=#{type}
+   </if>
+    
+   <include refid="filterSearch"/>
+
+</select>
+
+<select id="findColumnPublishArticles" resultMap="map2Article"  parameterType="com.db.bms.entity.Article">
+	<include refid="pagePrefix" />
+
+	select <include refid="fields2Article"/> 
+    from bus_article article,bus_resource_publish_map m 
+   	where article.article_no=m.resource_id 
+   	<if test="parentType != null">
+   	and m.parent_type=#{parentType}
+   	</if>
+   	<if test="parentId != null">
+   	and m.parent_id=#{parentId}
+   	</if>
+   	<if test="type != null">
+   	and m.type=#{type}
+   	</if>
+   	<include refid="filterSearch"/>
+ 	order by article.article_no desc
+	<include refid="pageSuffix"/>
+</select>
+
+<select id="getArticleCountByTemplateId" resultType="java.lang.Integer" parameterType="java.lang.Long">
+ 	select count(1) from bus_article a where a.template_id=#{templateId}
+</select>
+
+
+<!-- 文章策略 -->
+<!-- <select id="findArticleWithStrategy" resultMap="mapArticleExt"  parameterType="com.db.bms.entity.Article">
+	<include refid="pagePrefix"></include>
+
+	select <include refid="fields2Article"/>,
+	<include refid="com.db.bms.dao.StrategyMapper.fields2Strategy"/>
+	from bus_article article
+	left join (
+		select *
+		from bus_res_strategy_map rsm 
+		where rsm.type=${@com.db.bms.entity.ResStrategyMap@TYPE_ARTICLE} 
+	) rsm on article.article_no=rsm.res_id
+	left join bus_strategy strategy on rsm.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="article.article_no != null">
+    	and article.article_no=#{article.article_no}
+   	</if>
+    <if test="article.groupId != null">
+   	and (article.group_id=#{article.groupId} or article.operator_no=#{article.groupId})
+   	</if>
+   	<if test="article.companyNo != null">
+	and topic.company_no=#{topic.companyNo}
+   	</if>
+   	<if test="article.articleName != null and article.articleName != ''">
+    	and article.article_name like &apos;%${articleName}%&apos; escape '_'
+   	</if>
+   	<if test="article.status != null">
+    	and article.status=#{article.status}
+   	</if>
+   	<if test="article.type != null">
+    	and article.type=#{article.type}
+   	</if>
+   	<if test="article.captureFlag != null">
+   	and article.capture_flag=#{article.captureFlag}
+   	</if>
+	order by article.article_no desc
+
+	<include refid="pageSuffix"></include>	
+</select>
+
+<select id="findTopicWithStrategyCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Topic">
+	select count(1)
+	from bus_article article
+	left join (
+		select *
+		from bus_res_strategy_map rsm 
+		where rsm.type=${@com.db.bms.entity.ResStrategyMap@TYPE_ARTICLE} 
+	) rsm on article.article_no=rsm.res_id
+	left join bus_strategy strategy on rsm.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="article.article_no != null">
+    	and article.article_no=#{article.article_no}
+   	</if>
+    <if test="article.groupId != null">
+   	and (article.group_id=#{article.groupId} or article.operator_no=#{article.groupId})
+   	</if>
+   	<if test="article.companyNo != null">
+	and article.company_no=#{article.companyNo}
+   	</if>
+   	<if test="article.articleName != null and article.articleName != ''">
+    	and article.article_name like &apos;%${articleName}%&apos; escape '_'
+   	</if>
+   	<if test="article.status != null">
+    	and article.status=#{article.status}
+   	</if>
+   	<if test="article.type != null">
+    	and article.type=#{article.type}
+   	</if>
+   	<if test="article.captureFlag != null">
+   	and article.capture_flag=#{article.captureFlag}
+   	</if>
+</select> -->
+
+<!-- ////////////////////////////////////////////////////////////////////////////////// -->
+
+</mapper>

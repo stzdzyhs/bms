@@ -1,0 +1,980 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+ 
+<mapper namespace="com.db.bms.dao.CardRegionMapper" > 
+
+<!-- table/param alias: region -->
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="region" type="com.db.bms.entity.CardRegion" >
+    <id column="id" property="id"/>
+    <result column="region_name" property="regionName"/>
+    <result column="type" property="type"/>
+    <result column="code_type" property="codeType"/>
+	<result column="region_code" property="regionCode"/>
+	<result column="region_section_begin" property="regionSectionBegin"/>
+	<result column="region_section_end" property="regionSectionEnd"/>
+	<result column="parent_id" property="parentId"/>
+	<result column="depict" property="depict"/>
+	<result column="create_time" property="createTime"/>
+	<result column="update_time" property="updateTime"/>
+</resultMap>
+
+<resultMap id='map2CardRegion' type='com.db.bms.entity.CardRegion' >
+	<result column='region_id' property='id'/>
+	<result column='region_regionName' property='regionName'/>
+	<result column='region_type' property='type'/>
+	<result column='region_codeType' property='codeType'/>
+	<result column='region_regionCode' property='regionCode'/>
+	<result column='region_regionSectionBegin' property='regionSectionBegin'/>
+	<result column='region_regionSectionEnd' property='regionSectionEnd'/>
+	<result column='region_parentId' property='parentId'/>
+	<result column='region_depict' property='depict'/>
+	<result column='region_createTime' property='createTime'/>
+	<result column='region_updateTime' property='updateTime'/>
+</resultMap>
+<sql id='fields2CardRegion'>
+	region.id                region_id,
+	region.region_name       region_regionName,
+	region.type              region_type,
+	region.code_type         region_codeType,
+	region.region_code       region_regionCode,
+	region.region_section_begin region_regionSectionBegin,
+	region.region_section_end region_regionSectionEnd,
+	region.parent_id         region_parentId,
+	region.depict            region_depict,
+	region.create_time       region_createTime,
+	region.update_time       region_updateTime
+</sql>
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="region.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="region.pageUtil.pageOffset==0">
+		    select * from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	 </trim>
+	</if>
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	 <if test="region.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="region.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${region.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${region.pageUtil.lastRowCount}) where rownum_ &gt;
+			${region.pageUtil.pageOffset}
+		 </otherwise>
+	</choose>
+	 </trim>
+	</if>
+</sql>    
+<!-- //////////////////////////////////////////////////////////////////////// -->
+
+<resultMap type="com.db.bms.entity.CardRegion" id="regionChild" extends="region">
+  	<association property="parent" column="parent_id" select="findRegionById" ></association>
+</resultMap>
+<select id="findRegionById" resultMap="regionChild" parameterType="java.lang.Long">
+  select id,region_name,type,code_type,region_code,region_section_begin,region_section_end,parent_id,depict,create_time,update_time
+  from bus_card_region where id = #{regionId}
+</select>
+
+<select id="findRegionsById" resultMap="region" parameterType="java.lang.Long">
+  select id,region_name,type,code_type,region_code,region_section_begin,region_section_end,parent_id,depict,create_time,update_time
+  from bus_card_region where id in 
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+
+<!-- 查询,主键查询   -->
+<select id="selectByPrimaryKey"  resultMap="region" parameterType="java.lang.Object">
+	select * from bus_card_region where  id=#{0}
+</select>
+
+<select id="findRegionByCode" resultMap="region" parameterType="com.db.bms.entity.CardRegion">
+  select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+  r.depict,r.create_time,r.update_time from bus_card_region r 
+  where r.type=0 
+  <if test="regionCode != null  and regionCode != '' " >
+       and (r.region_code=#{regionCode} or (r.region_section_begin &lt;= #{regionCode} and r.region_section_end &gt;= #{regionCode}))
+   </if> 
+  <if test="regionSectionBegin != null  and regionSectionBegin != '' " >
+        and r.region_section_begin=#{regionSectionBegin} and r.region_section_end=#{regionSectionEnd}
+  </if> 
+</select>
+
+<!-- ........................................... -->
+<select id="findRegionCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+    select count(1) from bus_card_region r 
+    <if test="companyNos != null and companyNos.size > 0">
+    ,bus_company_card_region_map m 
+    </if> 
+    <if test="internetNos != null and internetNos.size > 0">
+    ,bus_internet_card_region_map n 
+    </if> 
+    <if test="spaceNos != null and spaceNos.size > 0">
+    ,bus_space_card_region_map s
+    </if>
+    where 1=1 
+   <if test="companyNos != null and companyNos.size > 0">
+   and r.id=m.region_id and m.company_no in
+      <foreach item="item" index="index" collection="companyNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+   </if> 
+   <if test="internetNos != null and internetNos.size > 0">
+   and r.id=n.region_id and n.internet_no in
+      <foreach item="item" index="index" collection="internetNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+   </if> 
+   <if test="spaceNos != null and spaceNos.size > 0">
+   and r.id=s.region_id and s.internet_no in
+      <foreach item="item" index="index" collection="spaceNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+   </if>
+    <if test="regionCode != null  and regionCode != '' " >
+        and r.region_code like &apos;%${regionCode}%&apos;
+    </if> 
+    <if test="regionName != null  and regionName != '' " >
+       and r.region_name like &apos;%${regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="regionSectionBeginNum != null" >
+        and r.region_section_begin &gt;= #{regionSectionBeginNum}
+    </if> 
+    <if test="regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{regionSectionEndNum}
+    </if> 
+    <if test="type != null  and type >= 0" >
+       and r.type=#{type}
+    </if> 
+    <if test="codeType != null  and codeType >= 0" >
+       and r.code_type=#{codeType}
+    </if> 
+
+</select>
+<!-- ......................................... -->
+<select id="findRegions" resultMap="regionChild"  parameterType="com.db.bms.entity.CardRegion">
+	select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+    r.depict,r.create_time,r.update_time from bus_card_region r 
+    <if test="companyNos != null and companyNos.size > 0">
+    ,bus_company_card_region_map m 
+    </if> 
+    <if test="internetNos != null and internetNos.size > 0">
+    ,bus_internet_card_region_map n 
+    </if> 
+    <if test="spaceNos != null and spaceNos.size > 0">
+    ,bus_space_card_region_map s
+    </if>
+    where 1=1 
+   <if test="companyNos != null and companyNos.size > 0">
+   and r.id=m.region_id and m.company_no in
+      <foreach item="item" index="index" collection="companyNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+   </if> 
+   <if test="internetNos != null and internetNos.size > 0">
+   and r.id=n.region_id and n.internet_no in
+      <foreach item="item" index="index" collection="internetNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+   </if> 
+   <if test="spaceNos != null and spaceNos.size > 0">
+   and r.id=s.region_id and s.internet_no in
+      <foreach item="item" index="index" collection="spaceNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+   </if>
+     <if test="regionCode != null  and regionCode != '' " >
+        and r.region_code like &apos;%${regionCode}%&apos;
+    </if> 
+    <if test="regionName != null  and regionName != '' " >
+       and r.region_name like &apos;%${regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="regionSectionBeginNum != null" >
+        and r.region_section_begin &gt;= #{regionSectionBeginNum}
+    </if> 
+    <if test="regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{regionSectionEndNum}
+    </if> 
+    <if test="type != null  and type >= 0" >
+       and r.type=#{type}
+    </if> 
+    <if test="codeType != null  and codeType >= 0" >
+       and r.code_type=#{codeType}
+    </if> 
+       order by r.id,r.update_time desc
+	<if test="pageUtil.paging == true" >
+		limit ${pageUtil.pageOffset},${pageUtil.pageSize} 
+	</if>       
+</select>
+
+<select id="getRegionCountByCode" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+   select count(1) from bus_card_region r where 1=1  
+   <if test="id != null  and id > 0 " >
+       and r.id!=#{id} 
+   </if> 
+   <if test="regionCode != null  and regionCode != '' " >
+       and (region_code=#{regionCode} 
+       or (r.region_section_begin&gt;=#{regionCode} and r.region_section_end&lt;=#{regionCode}) 
+       or (r.region_section_begin&lt;=#{regionCode} and r.region_section_end&gt;=#{regionCode}))
+   </if> 
+   <if test="regionSectionBegin != null  and regionSectionBegin != '' " >
+       and (r.region_code=#{regionSectionBegin} or r.region_code=#{regionSectionEnd}  
+       or (r.region_section_begin&gt;=#{regionSectionBegin} and r.region_section_end&lt;=#{regionSectionEnd}) 
+       or (r.region_section_begin&lt;=#{regionSectionEnd} and r.region_section_end&gt;=#{regionSectionBegin}))
+   </if> 
+    <if test="type != null  and type >= 0" >
+        and r.type=#{type}
+    </if> 
+   <if test="regionName != null and regionName != ''">
+   and r.region_name=#{regionName}
+   </if>
+</select>
+
+<insert id="addRegion"  parameterType="com.db.bms.entity.CardRegion" >
+  insert into bus_card_region(id,region_name,type,code_type,region_code,region_section_begin,region_section_end,parent_id,depict,create_time) 
+  values(s_card_region.nextval,#{regionName},#{type},#{codeType},#{regionCode,jdbcType=VARCHAR},#{regionSectionBegin,jdbcType=VARCHAR},
+  #{regionSectionEnd,jdbcType=VARCHAR},#{parentId},#{depict,jdbcType=VARCHAR},#{createTime})
+</insert>
+
+<update id="updateRegion" parameterType="com.db.bms.entity.CardRegion" >
+  update bus_card_region set region_name=#{regionName},type=#{type},code_type=#{codeType},region_code=#{regionCode,jdbcType=VARCHAR},region_section_begin=#{regionSectionBegin,jdbcType=VARCHAR},
+  region_section_end=#{regionSectionEnd,jdbcType=VARCHAR},parent_id=#{parentId},depict=#{depict,jdbcType=VARCHAR},update_time=#{updateTime} where id=#{id}
+</update>
+
+<select id="getChildRegionCount" resultType="java.lang.Integer" >
+ select count(1) from bus_card_region r where r.parent_id in
+ <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<delete id="deleteRegions">
+  delete from bus_card_region where id in 
+  <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+ 
+<!-- ............................................... -->
+<select id="findAllRegions" resultMap="region"  parameterType="com.db.bms.entity.CardRegion">
+ select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+ r.depict,r.create_time,r.update_time from bus_card_region r 
+ <if test="companyNo != null and companyNo > 0">
+ ,bus_company_card_region_map m 
+ </if> 
+ <if test="internetNo != null and internetNo > 0">
+ ,bus_internet_card_region_map n
+ </if> 
+ <if test="spaceNo != null and spaceNo > 0">
+ ,bus_space_card_region_map s
+ </if>
+ where 1=1 
+ <if test="companyNo != null and companyNo > 0">
+ and r.id=m.region_id and m.company_no=#{companyNo}
+ </if> 
+ <if test="internetNo != null and internetNo > 0">
+ and r.id=n.region_id and n.internet_no=#{internetNo}
+ </if> 
+ <if test="spaceNo != null and spaceNo > 0">
+ and r.id=s.region_id and s.space_no=#{spaceNo}
+ </if>
+ <if test="type != null  and type >= 0" >
+      and r.type=#{type}
+ </if> 
+</select>
+
+<select id="findCompanyRegionCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+   select count(1) from bus_card_region r,bus_company_card_region_map m 
+   where r.id=m.region_id and m.company_no=#{companyNo}
+    <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+
+</select> 
+<!-- ......................................................................... -->
+<select id="findInternetRegionCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+   select count(1) from bus_card_region r,bus_internet_card_region_map n 
+   where r.id=n.region_id and n.internet_no=#{internetNo}
+    <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+
+</select> 
+
+<select id="findClientRegionCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+   select count(1) from bus_card_region r,bus_client_card_region_map n 
+   where r.id=n.region_id and n.client_no=#{clientNo}
+    <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+
+</select> 
+
+<select id="findSpaceRegionCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+   select count(1) from bus_card_region r,bus_space_card_region_map s 
+   where r.id=s.region_id and s.space_no=#{spaceNo}
+    <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+
+</select>
+
+<select id="findCompanyRegions" resultMap="regionChild"  parameterType="com.db.bms.entity.CardRegion">
+	    <choose>
+		  <when test="region.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+       select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+       r.depict,r.create_time,r.update_time from bus_card_region r,bus_company_card_region_map m
+       where r.id=m.region_id and m.company_no=#{companyNo} 
+     <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+       order by r.id,r.update_time desc
+      <choose>
+		<when test="region.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${region.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${region.pageUtil.lastRowCount}) where rownum_ &gt;
+			${region.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select>
+
+<!-- ...................................................................... -->
+<select id="findInternetRegions" resultMap="regionChild"  parameterType="com.db.bms.entity.CardRegion">
+	    <choose>
+		  <when test="region.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+       select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+       r.depict,r.create_time,r.update_time from bus_card_region r,bus_internet_card_region_map n
+       where r.id=n.region_id and n.internet_no=#{internetNo} 
+     <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+       order by r.id,r.update_time desc
+      <choose>
+		<when test="region.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${region.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${region.pageUtil.lastRowCount}) where rownum_ &gt;
+			${region.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select>
+
+<select id="findClientRegions" resultMap="regionChild"  parameterType="com.db.bms.entity.CardRegion">
+	    <choose>
+		  <when test="region.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+       select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+       r.depict,r.create_time,r.update_time from bus_card_region r,bus_client_card_region_map n
+       where r.id=n.region_id and n.client_no=#{clientNo} 
+     <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+       order by r.id,r.update_time desc
+      <choose>
+		<when test="region.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${region.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${region.pageUtil.lastRowCount}) where rownum_ &gt;
+			${region.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select>
+ 
+<select id="findSpaceRegions" resultMap="regionChild"  parameterType="com.db.bms.entity.CardRegion">
+	    <choose>
+		  <when test="region.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+       select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+       r.depict,r.create_time,r.update_time from bus_card_region r,bus_space_card_region_map s
+       where r.id=s.region_id and s.space_no=#{spaceNo} 
+     <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+       order by r.id,r.update_time desc
+      <choose>
+		<when test="region.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${region.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${region.pageUtil.lastRowCount}) where rownum_ &gt;
+			${region.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select> 
+
+<select id="findCompanyRegionNoSelectCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+  select count(1) from bus_card_region r 
+  where r.id not in (select m.region_id from bus_company_card_region_map m where m.company_no=#{companyNo}) and r.type=0
+    <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+
+</select>
+
+<!-- ................................................................ -->
+<select id="findInternetRegionNoSelectCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+  select count(1) from bus_card_region r 
+  where r.id not in (select n.region_id from bus_internet_card_region_map n where n.internet_no=#{internetNo}) and r.type=0
+    <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+
+</select> 
+
+<select id="findClientRegionNoSelectCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+  select count(1) from bus_card_region r 
+  where r.id not in (select n.region_id from bus_client_card_region_map n where n.client_no=#{clientNo}) and r.type=0
+    <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+
+</select> 
+
+<select id="findSpaceRegionNoSelectCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+  select count(1) from bus_card_region r 
+  where r.id not in (select s.region_id from bus_space_card_region_map s where s.space_no=#{spaceNo}) and r.type=0
+    <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+
+</select>
+
+<select id="findCompanyRegionsNoSelect" resultMap="regionChild"  parameterType="com.db.bms.entity.CardRegion">
+	    <choose>
+		  <when test="region.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+        select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+        r.depict,r.create_time,r.update_time from bus_card_region r 
+        where r.id not in (select m.region_id from bus_company_card_region_map m where m.company_no=#{companyNo}) and r.type=0
+     <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+       order by r.id,r.update_time desc
+      <choose>
+		<when test="region.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${region.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${region.pageUtil.lastRowCount}) where rownum_ &gt;
+			${region.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select>
+
+<!-- ................................................................ -->
+<select id="findInternetRegionsNoSelect" resultMap="regionChild"  parameterType="com.db.bms.entity.CardRegion">
+	    <choose>
+		  <when test="region.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+        select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+        r.depict,r.create_time,r.update_time from bus_card_region r 
+        where r.id not in (select n.region_id from bus_internet_card_region_map n where n.internet_no=#{internetNo}) and r.type=0
+     <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+       order by r.id,r.update_time desc
+      <choose>
+		<when test="region.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${region.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${region.pageUtil.lastRowCount}) where rownum_ &gt;
+			${region.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select>
+ 
+<select id="findSpaceRegionsNoSelect" resultMap="regionChild"  parameterType="com.db.bms.entity.CardRegion">
+	    <choose>
+		  <when test="region.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+        select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+        r.depict,r.create_time,r.update_time from bus_card_region r 
+        where r.id not in (select s.region_id from bus_space_card_region_map s where s.space_no=#{spaceNo}) and r.type=0
+     <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+       order by r.id,r.update_time desc
+      <choose>
+		<when test="region.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${region.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${region.pageUtil.lastRowCount}) where rownum_ &gt;
+			${region.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select> 
+
+<select id="findStrategyRegionsNoSelect" resultMap="regionChild"  parameterType="com.db.bms.entity.CardRegion">
+	    <choose>
+		  <when test="region.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+        select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+        r.depict,r.create_time,r.update_time from bus_card_region r 
+        where r.id not in (select s.region_id from bus_strategy_card_region_map s where s.strategy_id=#{strategyId}) and r.type=0
+     <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+       order by r.id,r.update_time desc
+      <choose>
+		<when test="region.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${region.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${region.pageUtil.lastRowCount}) where rownum_ &gt;
+			${region.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select> 
+
+<select id="findClientRegionsNoSelect" resultMap="regionChild"  parameterType="com.db.bms.entity.CardRegion">
+	    <choose>
+		  <when test="region.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+        select r.id,r.region_name,r.type,r.code_type,r.region_code,r.region_section_begin,r.region_section_end,r.parent_id,
+        r.depict,r.create_time,r.update_time from bus_card_region r 
+        where r.id not in (select n.region_id from bus_client_card_region_map n where n.client_no=#{clientNo}) and r.type=0
+     <if test="region.regionCode != null  and region.regionCode != '' " >
+        and r.region_code like &apos;%${region.regionCode}%&apos;
+    </if> 
+    <if test="region.regionName != null  and region.regionName != '' " >
+       and r.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+    </if> 
+    <if test="region.regionSectionBeginNum != null " >
+        and r.region_section_begin &gt;= #{region.regionSectionBeginNum}
+    </if> 
+    <if test="region.regionSectionEndNum != null" >
+       and r.region_section_end &lt;= #{region.regionSectionEndNum}
+    </if> 
+    <if test="region.codeType != null  and region.codeType >= 0" >
+       and r.code_type=#{region.codeType}
+    </if> 
+       order by r.id,r.update_time desc
+      <choose>
+		<when test="region.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${region.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${region.pageUtil.lastRowCount}) where rownum_ &gt;
+			${region.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select>
+ 
+<select id="getCardRegionByCompanyNo" resultMap="region" parameterType="java.lang.Long">
+    select * from bus_card_region t , bus_company_card_region_map m where t.id=m.region_id and m.company_no=#{companyNo}
+</select> 
+ 
+<select id="getCardRegionByInternetNo" resultMap="region" parameterType="java.lang.Long">
+    select * from bus_card_region t , bus_internet_card_region_map n where t.id=n.region_id and n.internet_no=#{internetNo}
+</select> 
+
+<select id="getCardRegionBySpaceNo" resultMap="region" parameterType="java.lang.Long">
+    select * from bus_card_region t , bus_space_card_region_map s where t.id=s.region_id and s.space_no=#{spaceNo}
+</select>
+
+<select id="getCardRegionByStrategyId" resultMap="region" parameterType="java.lang.Long">
+    select * from bus_card_region t , bus_strategy_card_region_map s where t.id=s.region_id and s.strategy_id=#{strategyId}
+</select>
+
+<select id="getCardRegionByClientNo" resultMap="region" parameterType="java.lang.Long">
+    select * from bus_card_region t , bus_client_card_region_map s where t.id=s.region_id and s.client_no=#{clientNo}
+</select>
+
+<!-- 区域码策略 -->
+<!-- <select id="findCardRegionWithStrategy" resultMap="regionChild"  parameterType="com.db.bms.entity.CardRegion">
+	<include refid="pagePrefix"></include>
+
+	select <include refid="fields2Topic"/>,
+	<include refid="com.db.bms.dao.StrategyMapper.fields2Strategy"/>
+	from bus_card_region c
+	left join (
+		select *
+		from bus_strategy_condition con 
+		where con.condition_type=${@com.db.bms.entity.StrategyCondition@TYPE_CARD_REGION}
+	) con on c.id=con.condition_id
+	left join bus_strategy strategy on con.strategy_no = strategy.strategy_no
+	where 1=1;
+   	<if test="c.id != null">
+    	and c.id=#{c.id}
+   	</if>
+   	<if test="c.regionName != null and c.regionName != ''">
+    	and c.region_name like &apos;%${regionName}%&apos; escape '_'
+   	</if>
+   	<if test="c.type != null">
+    	and c.type=#{c.type}
+   	</if>
+	order by c.id desc
+
+	<include refid="pageSuffix"></include>	
+</select>
+
+<select id="findCardRegionWithStrategyCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+	select count(1)
+	from bus_card_region c
+	left join (
+		select *
+		from bus_strategy_condition con 
+		where con.condition_type=${@com.db.bms.entity.StrategyCondition@TYPE_CARD_REGION} 
+	) con on c.id=con.condition_id
+	left join bus_strategy strategy on con.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="c.id != null">
+    	and c.id=#{c.id}
+   	</if>
+   	<if test="c.regionName != null and c.regionName != ''">
+    	and c.regionName like &apos;%${regionName}%&apos; escape '_'
+   	</if>
+   	<if test="c.type != null">
+    	and c.type=#{c.type}
+   	</if>
+</select> -->
+  
+
+
+<select id="findStrategyCardRegionNoSelectCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.CardRegion">
+select count(1) 
+from bus_card_region region
+where 1=1
+<if test="strategyNo!=null" >
+<!-- can select all card region 
+   and cr.company_no=(select bus_strategy.company_no from bus_strategy where bus_strategy.strategy_no=#{strategyNo})
+ -->	
+</if>
+<if test="strategyNo==null" > <!-- companyNo must not null -->
+<!-- can select all card region 
+	and cr.company_no=#{companyNo}
+-->
+</if>
+<if test="region.regionCode != null  and region.regionCode != '' " >
+    and region.region_code like &apos;%${region.regionCode}%&apos;
+</if> 
+<if test="region.regionName != null  and region.regionName != '' " >
+   and region.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+</if> 
+<if test="region.regionSectionBeginNum != null " >
+    and region.region_section_begin &gt;= #{region.regionSectionBeginNum}
+</if> 
+<if test="region.regionSectionEndNum != null" >
+   and region.region_section_end &lt;= #{region.regionSectionEndNum}
+</if> 
+<if test="region.codeType != null  and region.codeType >= 0" >
+   and region.code_type=#{region.codeType}
+</if>
+<if test="excludeIds != null" >
+	and region.id not in 
+    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+   		#{item}
+	</foreach>
+</if>
+</select>
+
+<select id="findStrategyCardRegionNoSelect" resultMap="map2CardRegion"  parameterType="com.db.bms.entity.CardRegion">
+	<include refid="pagePrefix"/>
+select <include refid="fields2CardRegion"/> from bus_card_region region
+where 1=1
+<if test="strategyNo!=null" >
+<!-- can select all card region 
+   and cr.company_no=(select bus_strategy.company_no from bus_strategy where bus_strategy.strategy_no=#{strategyNo})
+ -->	
+</if>
+<if test="strategyNo==null" > <!-- companyNo must not null -->
+<!-- can select all card region 
+	and cr.company_no=#{companyNo}
+-->
+</if>
+<if test="region.regionCode != null  and region.regionCode != '' " >
+    and region.region_code like &apos;%${region.regionCode}%&apos;
+</if> 
+<if test="region.regionName != null  and region.regionName != '' " >
+   and region.region_name like &apos;%${region.regionName}%&apos; <!-- escape '_' , see GV-32 -->
+</if> 
+<if test="region.regionSectionBeginNum != null " >
+    and region.region_section_begin &gt;= #{region.regionSectionBeginNum}
+</if> 
+<if test="region.regionSectionEndNum != null" >
+   and region.region_section_end &lt;= #{region.regionSectionEndNum}
+</if> 
+<if test="region.codeType != null  and region.codeType >= 0" >
+   and region.code_type=#{region.codeType}
+</if>
+<if test="excludeIds != null" >
+	and region.id not in 
+    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+   		#{item}
+	</foreach>
+</if>
+order by region.id desc,region.update_time desc
+	<include refid="pageSuffix"/>       
+</select>
+
+</mapper>   

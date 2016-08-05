@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.ColumnArticleMapMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+
+<resultMap type="com.db.bms.entity.ColumnArticleMap" id="mapColumnArticleMap_Column_Operator">
+	<id     column="CAM_column_article_no"       property="columnArticleNo"/>
+	<result column="CAM_column_article_no"       property="columnArticleNo"/>
+	<result column="CAM_column_no"               property="columnNo"/>
+	<result column="CAM_article_no"              property="articleNo"/>	
+	<result column="CAM_CREATED_BY"				property="createdBy"/>
+	
+  	<association property="column" javaType="com.db.bms.entity.Column">
+		<id     column="COLUMN_column_no"       property="columnNo"/>
+		
+		<result column="COLUMN_column_no"       property="columnNo"/>
+		<result column="COLUMN_column_id"       property="columnId"/>
+		<result column="COLUMN_column_name"     property="columnName"/>
+		<result column="COLUMN_column_desc"     property="columnDesc"/>
+		<result column="COLUMN_parent_no"       property="parentNo"/>
+		<result column="COLUMN_status"          property="status"  />
+	
+		<result column="COLUMN_operator_no"      property="operatorNo"/>
+		<result column="COLUMN_company_no"       property="companyNo"  />
+		<result column="COLUMN_create_time"     property="createTime"/>
+		<result column="COLUMN_update_time"     property="updateTime"/>		
+		<result column="COLUMN_show_order"     property="showOrder"/>
+	</association>
+	
+	<association property="operator" javaType="com.db.bms.entity.Operator">
+		<id     column="OPERATOR_operator_no"       property="operatorNo" />
+		<result column="OPERATOR_operator_no"       property="operatorNo"/>
+		<result column="OPERATOR_operator_id"       property="operatorId"/>
+		<result column="OPERATOR_operator_name"     property="operatorName"/>
+		<result column="OPERATOR_operator_pwd"      property="operatorPwd"/>
+		<result column="OPERATOR_type"              property="type"/>
+		<result column="OPERATOR_status"            property="status"/>
+		<result column="OPERATOR_operator_email"    property="operatorEmail"/>
+		<result column="OPERATOR_operator_tel"      property="operatorTel"/>
+		<result column="OPERATOR_operator_describe" property="operatorDescribe"/>
+		<result column="OPERATOR_company_no"        property="companyNo"/>
+		<result column="OPERATOR_create_by"         property="createBy"/>
+		<result column="OPERATOR_create_time"       property="createTime"/>
+	</association>
+	
+</resultMap>
+<!-- //////////////////////////////////////////////////////////////////////// -->
+
+<sql id="fieldsColumnArticleMap">
+	bus_column_article_map.column_article_no   CAM_column_article_no,
+	bus_column_article_map.column_no           CAM_column_no,
+	bus_column_article_map.article_no          CAM_article_no,
+	bus_column_article_map.CREATED_BY          CAM_CREATED_BY
+</sql>
+
+<sql id="fieldsColumn">
+	bus_column.column_no           COLUMN_column_no,
+	bus_column.column_id           COLUMN_column_id,
+	bus_column.column_name         COLUMN_column_name,
+	bus_column.column_desc         COLUMN_column_desc,
+	bus_column.cover               COLUMN_cover,
+	bus_column.parent_no           COLUMN_parent_no,
+	bus_column.status              COLUMN_status,
+	bus_column.operator_no         COLUMN_operator_no,
+	bus_column.company_no          COLUMN_company_no,
+	bus_column.create_time         COLUMN_create_time,
+	bus_column.update_time         COLUMN_update_time,
+	bus_column.show_order          COLUMN_show_order
+</sql>
+
+<sql id="fieldsArticle">
+	bus_article.article_no			ARTICLE_article_no,
+	bus_article.article_id			ARTICLE_article_id,
+	bus_article.article_name		ARTICLE_article_name,
+	bus_article.title				ARTICLE_title,
+	bus_article.title2				ARTICLE_title2,
+	bus_article.introduction		ARTICLE_introduction,
+	bus_article.body  				ARTICLE_article_body,
+	bus_article.status              ARTICLE_status,
+	bus_article.operator_no         ARTICLE_operator_no,
+	bus_article.company_no          ARTICLE_company_no,
+	bus_article.create_time  		ARTICLE_create_time,
+	bus_article.template_id			ARTICLE_template_id,
+	bus_article.show_order			ARTICLE_show_order
+</sql>
+
+<sql id = "fieldsOperator">
+	sys_operator.operator_no        OPERATOR_operator_no,
+	sys_operator.operator_id        OPERATOR_operator_id,
+	sys_operator.operator_name      OPERATOR_operator_name, 
+	sys_operator.operator_pwd       OPERATOR_operator_pwd,
+	sys_operator.operator_email     OPERATOR_operator_email, 
+	sys_operator.operator_tel       OPERATOR_operator_tel,
+	sys_operator.operator_describe  OPERATOR_operator_describe,
+	sys_operator.type               OPERATOR_type,
+	sys_operator.status             OPERATOR_status 
+</sql>
+<!-- //////////////////////////////////////////////////////////////////////// -->
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="column.pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="column.pageUtil.pageOffset==0">
+		         select *  from (
+		      </when>
+		      <otherwise>
+		     	 select * from (select row_.*, rownum rownum_ from (
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="column.pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="column.pageUtil.pageOffset==0">
+		         )where rownum &lt;= ${column.pageUtil.lastRowCount}
+		      </when>
+		      <otherwise>
+		     	 ) row_ where rownum &lt;= ${column.pageUtil.lastRowCount}) where rownum_ &gt; ${column.pageUtil.pageOffset}
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+<!-- //////////////////////////////////////////////////////////////////////// -->
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	select s_column_article_map.nextval from dual
+</select>
+<!-- //////////////////////////////////////////////////////////////////////// -->
+
+<!-- select by nos (primary key) array -->
+<select id="selectByNos" resultMap="mapColumnArticleMap_Column_Operator" >
+   	select <include refid="fieldsColumnArticleMap"/>, <include refid="fieldsColumn"/>,
+		   <include refid="fieldsOperator"/>
+   	from bus_column_article_map 
+	left join bus_column on bus_column_article_map.column_no=bus_column.column_no 
+	left join sys_operator on bus_column.operator_no = sys_operator.operator_no
+	where column_article_no in 
+	<foreach item="item" index="index" collection="nos" open="(" separator="," close=")">
+    	#{item}
+    </foreach>
+</select>
+
+
+
+<!-- 查询,实体查询   -->
+<!-- ******************************************************** -->
+<sql id="filterSearch">
+   <if test="column.columnName != null  and column.columnName != '' " >
+       and bus_column.column_name like &apos;%${column.columnName}%&apos;
+   </if>
+   <if test="column.parentNo != null  and column.parentNo > 0 " >
+       and bus_column.parent_no = #{column.parentNo}
+   </if>
+</sql>
+
+<!-- param:column, need set column.articleNo and paging -->
+<select id="selectArticleColumnCount" resultType="java.lang.Integer">
+   	select count(*) 
+   	from bus_column_article_map
+    left join BUS_COLUMN on bus_column_article_map.column_no=bus_column.column_no 
+   	where article_no=${column.articleNo}
+   	<include refid="filterSearch"/>
+</select>
+<!-- param:column, need set column.articleNo and paging -->
+<select id="selectArticleColumn" resultMap="mapColumnArticleMap_Column_Operator">
+	<include refid="pagePrefix" />
+
+   	select <include refid="fieldsColumnArticleMap"/>, <include refid="fieldsColumn"/>,
+		   <include refid="fieldsOperator"/>
+   	from bus_column_article_map 
+	left join bus_column on bus_column_article_map.column_no=bus_column.column_no 
+	left join sys_operator on bus_column.operator_no = sys_operator.operator_no
+	where article_no=${column.articleNo}
+	<include refid="filterSearch"/>
+	
+	<include refid="pageSuffix"/>
+</select>
+<!-- //////////////////////////////////////////////////////////////////////// -->
+
+<insert id="addColumnArticleMap" parameterType="com.db.bms.entity.ColumnArticleMap">
+ 	insert into bus_column_article_map(column_article_no, column_no, article_no,CREATED_BY) 
+	values(#{columnArticleMap.columnArticleNo}, #{columnArticleMap.columnNo}, ${columnArticleMap.articleNo},${columnArticleMap.createdBy})
+</insert>
+
+<delete id="deleteColumnArticleMap" parameterType="com.db.bms.entity.ColumnArticleMap">
+  	delete from bus_column_article_map where column_article_no = ${columnArticleMap.columnArticleNo}
+</delete>
+
+<delete id="deleteArticleMap" parameterType="java.lang.Long">
+	delete from bus_column_article_map where article_no = ${articleNo}
+</delete>
+
+<delete id="deleteColumnMap" parameterType="java.lang.Long">
+	delete from bus_column_article_map where column_no = ${columnNo}
+</delete>
+
+<!-- /////////////////////columnArticleMap to article /////////////////////////////// -->
+<resultMap type="com.db.bms.entity.ColumnArticleMap" id="mapColumnArticleMap_Article_Operator">
+	<id     column="CAM_column_article_no"       property="columnArticleNo"/>
+	<result column="CAM_column_article_no"       property="columnArticleNo"/>
+	<result column="CAM_column_no"               property="columnNo"/>
+	<result column="CAM_article_no"              property="articleNo"/>	
+	<result column="CAM_CREATED_BY"				property="createdBy"/>
+  	<association property="article" javaType="com.db.bms.entity.Article">
+		<id     column="ARTICLE_article_no"     property="articleNo"/>
+		
+		<result column="ARTICLE_article_no"     property="articleNo"/>
+		<result column="ARTICLE_article_id"     property="articleId"/>
+		<result column="ARTICLE_article_name"   property="articleName"/>
+		<result column="ARTICLE_title"    	 	property="title"/>
+		<result column="ARTICLE_title2"       	property="title2"/>
+		<result column="ARTICLE_introduction"   property="introduction"/>
+		<result column="ARTICLE_article_body"   property="body"/>
+		
+		<result column="ARTICLE_status"          property="status"  />	
+		<result column="ARTICLE_operator_no"     property="operatorNo"/>
+		<result column="ARTICLE_company_no"      property="companyNo"  />
+		
+		<result column="ARTICLE_create_time"    property="createTime"/>
+		<result column="ARTICLE_template_id"    property="templateId"/>
+		<result column="ARTICLE_show_order"     property="showOrder"/> 		
+	</association>
+	
+	<association property="operator" javaType="com.db.bms.entity.Operator">
+		<id     column="OPERATOR_operator_no"       property="operatorNo" />
+		<result column="OPERATOR_operator_no"       property="operatorNo"/>
+		<result column="OPERATOR_operator_id"       property="operatorId"/>
+		<result column="OPERATOR_operator_name"     property="operatorName"/>
+		<result column="OPERATOR_operator_pwd"      property="operatorPwd"/>
+		<result column="OPERATOR_type"              property="type"/>
+		<result column="OPERATOR_status"            property="status"/>
+		<result column="OPERATOR_operator_email"    property="operatorEmail"/>
+		<result column="OPERATOR_operator_tel"      property="operatorTel"/>
+		<result column="OPERATOR_operator_describe" property="operatorDescribe"/>
+		<result column="OPERATOR_company_no"        property="companyNo"/>
+		<result column="OPERATOR_create_by"         property="createBy"/>
+		<result column="OPERATOR_create_time"       property="createTime"/>
+	</association>
+	
+</resultMap>
+
+<!-- oracle分页前缀 -->
+<sql id="myPagePrefix">
+	<if test="article.pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="article.pageUtil.pageOffset==0">
+		         select *  from (
+		      </when>
+		      <otherwise>
+		     	 select * from (select row_.*, rownum rownum_ from (
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+<!-- oracle分页后缀 -->
+<sql id="myPageSuffix">
+	<if test="article.pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="article.pageUtil.pageOffset==0">
+		         )where rownum &lt;= ${article.pageUtil.lastRowCount}
+		      </when>
+		      <otherwise>
+		     	 ) row_ where rownum &lt;= ${article.pageUtil.lastRowCount}) where rownum_ &gt; ${article.pageUtil.pageOffset}
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+<!-- //////////////////////////////////////////////////////////////////////// -->
+	
+<!-- select by nos (primary key) array -->
+<select id="selectByNoes" resultMap="mapColumnArticleMap_Article_Operator" >
+   	select <include refid="fieldsColumnArticleMap"/>, <include refid="fieldsArticle"/>,
+		   <include refid="fieldsOperator"/>
+   	from bus_column_article_map 
+	left join bus_article on bus_column_article_map.article_no=bus_article.article_no 
+	left join sys_operator on bus_article.operator_no = sys_operator.operator_no
+	where column_article_no in 
+	<foreach item="item" index="index" collection="nos" open="(" separator="," close=")">
+    	#{item}
+    </foreach>
+</select>	
+
+<!-- 查询,实体查询   -->
+<!-- ******************************************************** -->
+<sql id="myFilterSearch">
+	<if test="article.articleId != null &amp;&amp; article.articleId.length() > 0">
+		and bus_article.article_id like &apos;%${article.articleId}%&apos;
+	</if>
+    <if test="article.articleName != null  and article.articleName != '' " >
+       and bus_article.article_name like &apos;%${article.articleName}%&apos;
+    </if>
+    <if test="article.title != null &amp;&amp; article.title.length() > 0">
+    	and bus_article.title like &apos;%${article.title}%&apos;
+    </if>
+    <if test="article.status != null">
+    	and bus_article.status=#{article.status}
+    </if>
+    <if test="article.groupId != null">
+   		and (bus_article.group_id=#{article.groupId} or bus_article.operator_no=#{article.groupId})
+   </if>
+   <if test="article.allocResourceIds != null and article.allocResourceIds.size > 0">
+      or bus_article.article_no in
+      <foreach item="item" index="index" collection="article.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="article.allocResourceIds == null or article.allocResourceIds.size == 0">
+      <if test="article.operatorNo != null">
+       and bus_article.operator_no=#{article.operatorNo}
+      </if>
+   </if>
+</sql>
+
+<sql id="orderRegular">
+	order by bus_article.show_order
+	   <if test="article.sortKey == 'createTime'">
+	       ,bus_article.create_time ${article.sortType}
+	   </if>
+	   <if test="article.sortKey == 'articleName'">
+	       ,bus_article.article_name ${article.sortType}
+	   </if>
+</sql>
+
+<select id="selectColumnArticlesCount" resultType="java.lang.Integer">
+   	select count(*) 
+   	from bus_column_article_map
+    left join bus_article on bus_column_article_map.article_no=bus_article.article_no 
+    left join sys_operator on bus_article.operator_no = sys_operator.operator_no
+   	where bus_column_article_map.column_no=${article.columnNo}
+   	<include refid="myFilterSearch"/>
+</select>
+
+<select id="selectColumnArticles" resultMap="mapColumnArticleMap_Article_Operator" parameterType="com.db.bms.entity.Article">
+	<include refid="myPagePrefix" />
+	
+		select <include refid="fieldsColumnArticleMap"/>, <include refid="fieldsArticle"/>,
+			   <include refid="fieldsOperator"/>
+	   	from bus_column_article_map 
+		left join bus_article on bus_column_article_map.article_no=bus_article.article_no 
+		left join sys_operator on bus_article.operator_no = sys_operator.operator_no
+		where bus_column_article_map.column_no=${article.columnNo}
+		<include refid="myFilterSearch"/>
+		
+		<include refid="orderRegular"/>
+		
+	<include refid="myPageSuffix"/>  
+	
+</select>
+
+<select id="getColumnArticleCount" resultType="java.lang.Integer">
+select count(1) from bus_column_article_map m where m.column_no=#{columnNo} and m.article_no=#{articleNo}
+</select>
+  
+</mapper>

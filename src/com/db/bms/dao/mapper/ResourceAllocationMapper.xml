@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.ResourceAllocationMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="resourceAllocation" type="com.db.bms.entity.ResourceAllocation" >
+<id column="id" property="id"/>
+<result column="type" property="type"/>
+<result column="resource_id" property="resourceId"/>
+<result column="operator_no" property="operatorNo"/>
+<result column="alloc_by" property="allocBy"/>
+<result column="alloc_time" property="allocTime"/>
+<result column="cmd_str" property="cmdStr"/>
+</resultMap>
+
+
+<insert id="addResourceAllocation"  parameterType="com.db.bms.entity.ResourceAllocation" >
+  insert into bus_resource_allocation(id,type,resource_id,operator_no,alloc_by,alloc_time,cmd_str) 
+  values(s_resource_alloc.nextval,#{type},#{resourceId},#{operatorNo},#{allocBy},#{allocTime},#{cmdStr})
+</insert>
+
+
+<delete id="deleteResourceAllocation" parameterType="java.lang.Long">
+  delete from bus_resource_allocation where 1=1 
+  <if test="type != null">
+   and type=#{type}
+  </if>
+  <if test="operatorNo != null">
+  and operator_no=#{operatorNo}
+  </if>
+  <if test="resourceIds != null and resourceIds.length > 0">
+     and resource_id in
+   <foreach item="item" index="index" collection="resourceIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+  </if>
+  <if test="operatorNos != null and operatorNos.length > 0">
+    and operator_no in
+       <foreach item="item" index="index" collection="operatorNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+  </if>
+</delete>
+
+<select id="findAllocResourceIds" resultType="java.lang.Long">
+  select a.resource_id from bus_resource_allocation a where a.type=#{type} and a.operator_no=#{operatorNo}
+</select>
+
+<select id="findAllocResourceIdsFilterCmd" resultType="java.lang.Long">
+  select a.resource_id from bus_resource_allocation a where a.type=#{type} and a.operator_no=#{operatorNo} and a.cmd_str like &apos;%${cmdStr}%&apos;
+</select>
+
+<select id="findAllocResourceByIds" resultMap="resourceAllocation">
+	select a.id,a.type,a.resource_id,a.operator_no,a.alloc_by,a.alloc_time,a.cmd_str from bus_resource_allocation a where a.resource_id in 
+	<foreach item="item" index="index" collection="resourceIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+   order by a.id desc
+</select>
+
+</mapper>

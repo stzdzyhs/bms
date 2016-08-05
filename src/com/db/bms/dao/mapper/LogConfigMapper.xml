@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.LogConfigMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="logConfig" type="com.db.bms.entity.LogConfig" >
+<id column="LOG_CONFIG_NO" property="logConfigNo" />
+<result column="LOG_BACKUP_TYPE" property="logBackupType"/>
+<result column="LOG_RUN_TYPE" property="logRunType"/>
+<result column="LOG_RUN_TIME" property="logRunTime"/>
+<result column="LOG_RUN_TIMESTR" property="logRunTimestr"/>
+<result column="CRON_EXPRESSION" property="cronExpression"/>
+<result column="LOG_CREATE_TIME" property="logCreateTime"/>
+</resultMap>
+
+<insert id="addLogConfig"  parameterType="com.db.bms.entity.LogConfig">
+	insert into sys_log_config(LOG_CONFIG_NO,LOG_BACKUP_TYPE,LOG_RUN_TYPE,LOG_RUN_TIME,LOG_RUN_TIMESTR,CRON_EXPRESSION,LOG_CREATE_TIME) 
+    values(S_LOG_CONFIG.NEXTVAL,#{logBackupType},#{logRunType},#{logRunTime},#{logRunTimestr},#{cronExpression},#{logCreateTime})
+</insert>
+
+<update id="updateLogConfig" parameterType="com.db.bms.entity.LogConfig">
+   update sys_log_config set LOG_BACKUP_TYPE=#{logBackupType},LOG_RUN_TYPE=#{logRunType},LOG_RUN_TIME=#{logRunTime},
+   LOG_RUN_TIMESTR=#{logRunTimestr},CRON_EXPRESSION=#{cronExpression},LOG_CREATE_TIME=#{logCreateTime} where LOG_CONFIG_NO=#{logConfigNo} 
+</update>
+
+<select id="findLogConfigs" resultMap="logConfig"  parameterType="com.db.bms.entity.LogConfig">
+   select LOG_CONFIG_NO,LOG_BACKUP_TYPE,LOG_RUN_TYPE,LOG_RUN_TIME,LOG_RUN_TIMESTR,CRON_EXPRESSION,LOG_CREATE_TIME 
+   from sys_log_config
+</select>
+
+</mapper>

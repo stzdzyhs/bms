@@ -1,0 +1,727 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.AlbumMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="album" type="com.db.bms.entity.Album" >
+	<id column="album_no" property="albumNo"/>
+	<result column="show_order" property="showOrder"/>
+	<result column="album_id" property="albumId"/>
+	<result column="album_name" property="albumName"/>
+	<result column="album_cover" property="albumCover"/>
+	<result column="check_code" property="checkCode"/>
+	<result column="status" property="status"/>
+	<result column="album_label" property="albumLabel"/>
+	<result column="album_desc" property="albumDesc"/>
+	<result column="pic_size" property="picSize"/>
+	<result column="pic_format" property="picFormat"/>
+	<result column="pic_height" property="picHeight"/>
+	<result column="pic_width" property="picWidth"/>
+	<result column="pic_name_len" property="picNameLen"/>
+	<result column="pic_desc_len" property="picDescLen"/>
+	<result column="capture_flag" property="captureFlag"/>
+	<result column="operator_no" property="operatorNo"/>
+	<result column="company_no" property="companyNo"/>
+	<result column="group_id" property="groupId"/>
+	<result column="template_id" property="templateId"/>
+	<result column="create_time" property="createTime"/>
+	<result column="update_time" property="updateTime"/>
+	<result column="is_self" property="isSelf"/>
+</resultMap>
+
+<resultMap id='map2Album' type='com.db.bms.entity.Album' >
+	<id     column='album_albumNo' property='albumNo'/>
+	<result column='album_showOrder' property='showOrder'/>
+	<result column='album_albumId' property='albumId'/>
+	<result column='album_albumName' property='albumName'/>
+	<result column='album_albumCover' property='albumCover'/>
+	<result column='album_checkCode' property='checkCode'/>
+	<result column='album_status' property='status'/>
+	<result column='album_albumLabel' property='albumLabel'/>
+	<result column='album_albumDesc' property='albumDesc'/>
+	<result column='album_picSize' property='picSize'/>
+	<result column='album_picFormat' property='picFormat'/>
+	<result column='album_picHeight' property='picHeight'/>
+	<result column='album_picWidth' property='picWidth'/>
+	<result column='album_picNameLen' property='picNameLen'/>
+	<result column='album_picDescLen' property='picDescLen'/>
+	<result column='album_captureFlag' property='captureFlag'/>
+	<result column='album_operatorNo' property='operatorNo'/>
+	<result column='album_companyNo' property='companyNo'/>
+	<result column='album_groupId' property='groupId'/>
+	<result column='album_templateId' property='templateId'/>
+	<result column='album_createTime' property='createTime'/>
+	<result column='album_updateTime' property='updateTime'/>
+</resultMap>
+<sql id='fields2Album'>
+	album.album_no               album_albumNo,
+	album.show_order             album_showOrder,
+	album.album_id               album_albumId,
+	album.album_name             album_albumName,
+	album.album_cover            album_albumCover,
+	album.check_code             album_checkCode,
+	album.status                 album_status,
+	album.album_label            album_albumLabel,
+	album.album_desc             album_albumDesc,
+	album.pic_size               album_picSize,
+	album.pic_format             album_picFormat,
+	album.pic_height             album_picHeight,
+	album.pic_width              album_picWidth,
+	album.pic_name_len           album_picNameLen,
+	album.pic_desc_len           album_picDescLen,
+	album.capture_flag           album_captureFlag,
+	album.operator_no            album_operatorNo,
+	album.company_no             album_companyNo,
+	album.group_id               album_groupId,
+	album.template_id            album_templateId,
+	album.create_time            album_createTime,
+	album.update_time            album_updateTime
+</sql>
+
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="album.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="album.pageUtil.pageOffset==0">
+		    select * from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	</trim>
+	</if>
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="album.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="album.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${album.pageUtil.lastRowCount}
+		</when>
+		<otherwise>
+			) row_ where rownum &lt;= ${album.pageUtil.lastRowCount}) where rownum_ &gt;
+			${album.pageUtil.pageOffset}
+		</otherwise>
+	</choose>
+	</trim>
+	</if>
+</sql>
+
+<resultMap type="com.db.bms.entity.Album" id="albumChild" extends="album">
+  <association property="company" column="company_no" select="com.db.bms.dao.CompanyMapper.findCompanyByNo" ></association>
+  <association property="operator" column="operator_no" select="com.db.bms.dao.OperatorMapper.findOperatorById" ></association>
+  <association property="template" column="template_id" select="com.db.bms.dao.TemplateMapper.findTemplateById" ></association>
+  <association property="resAlbumMap" javaType="com.db.bms.entity.ResourceAlbumMap">
+  	<id column="id" property="id"/>
+  	<result column="created_by" property="createdBy"/>
+  </association>
+</resultMap>
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	select s_album.nextval from dual
+</select>
+
+<select id="findAlbumByAlbumId" resultMap="albumChild" parameterType="java.lang.String">
+select a.album_no,a.show_order,a.album_id,a.album_name,a.album_cover,a.check_code,a.status,a.album_label,a.album_desc,a.pic_size,
+a.pic_format,a.pic_height,a.pic_width,a.pic_name_len,a.pic_desc_len,a.capture_flag,a.operator_no,a.company_no,a.group_id,a.template_id,a.create_time,a.update_time 
+from bus_album a where a.album_id=#{albumId}
+</select>
+
+
+<select id="findAlbumById" resultMap="albumChild" parameterType="java.lang.Long">
+  select a.album_no,a.show_order,a.album_id,a.album_name,a.album_cover,a.check_code,a.status,a.album_label,a.album_desc,a.pic_size,
+  a.pic_format,a.pic_height,a.pic_width,a.pic_name_len,a.pic_desc_len,a.capture_flag,a.operator_no,a.company_no,a.group_id,a.template_id,a.create_time,a.update_time 
+  from bus_album a where a.album_no=#{albumNo}
+</select>
+
+<select id="findAlbumsById" resultMap="album" parameterType="java.lang.Long">
+  select a.album_no,a.show_order,a.album_id,a.album_name,a.album_cover,a.check_code,a.status,a.album_label,a.album_desc,a.pic_size,
+  a.pic_format,a.pic_height,a.pic_width,a.pic_name_len,a.pic_desc_len,a.capture_flag,a.operator_no,a.company_no,a.group_id,a.template_id,a.create_time,a.update_time 
+  from bus_album a where a.album_no in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<select id="findAlbumCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Album">
+   select count(1) from bus_album a where 1=1 
+   <if test="groupId != null and allocResourceIds != null and allocResourceIds.size &gt; 0">
+   and (a.group_id=#{groupId} or a.operator_no=#{groupId} or a.album_no in
+      <foreach item="item" index="index" collection="allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>) 
+   </if>
+   <if test="groupId != null and (allocResourceIds == null or allocResourceIds.size == 0)">
+   and (a.group_id=#{groupId} or a.operator_no=#{groupId}) 
+   </if>
+   <if test="groupId == null and allocResourceIds != null and allocResourceIds.size &gt; 0">
+      and a.album_no in
+      <foreach item="item" index="index" collection="allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="groupId == null and allocResourceIds == null or allocResourceIds.size == 0">
+      <if test="operatorNo != null">
+       and a.operator_no=#{operatorNo}
+      </if>
+   </if>
+   <if test="companyNo != null">
+     and a.company_no=#{companyNo}
+   </if>   
+   <if test="albumName != null and albumName != ''">
+     and a.album_name like &apos;%${albumName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="status != null">
+     and a.status=#{status}
+   </if>
+   <if test="captureFlag != null">
+    and a.capture_flag=#{captureFlag}
+   </if>
+</select>
+
+<select id="findAlbums" resultMap="albumChild"  parameterType="com.db.bms.entity.Album">
+	select a.album_no,a.show_order,a.album_id,a.album_name,a.album_cover,a.check_code,a.status,a.album_label,a.album_desc,a.pic_size,
+    a.pic_format,a.pic_height,a.pic_width,a.pic_name_len,a.pic_desc_len,a.capture_flag,a.operator_no,a.company_no,a.group_id,a.template_id,a.create_time,a.update_time
+    from bus_album a where 1=1
+   	<if test="groupId != null and allocResourceIds != null and allocResourceIds.size &gt; 0">
+   	and (a.group_id=#{groupId} or a.operator_no=#{groupId} or a.album_no in
+    	<foreach item="item" index="index" collection="allocResourceIds" open="(" separator="," close=")">
+      		#{item}
+     	</foreach>) 
+   	</if>
+   	<if test="groupId != null and (allocResourceIds == null or allocResourceIds.size == 0)">
+   	and (a.group_id=#{groupId} or a.operator_no=#{groupId}) 
+   	</if>
+   	<if test="groupId == null and allocResourceIds != null and allocResourceIds.size &gt; 0">
+    	and a.album_no in
+      	<foreach item="item" index="index" collection="allocResourceIds" open="(" separator="," close=")">
+      		#{item}
+     	</foreach>
+   	</if>
+   	<if test="groupId == null and allocResourceIds == null or allocResourceIds.size == 0">
+    	<if test="operatorNo != null">
+       		and a.operator_no=#{operatorNo}
+      	</if>
+   	</if>
+   	<if test="companyNo != null">
+     	and a.company_no=#{companyNo}
+   	</if>   
+   	<if test="albumName != null and albumName != ''">
+    	and a.album_name like &apos;%${albumName}%&apos; <!-- escape '_' , see GV-32 -->
+   	</if>
+   	<if test="status != null">
+    	and a.status=#{status}
+   	</if>
+   	<if test="captureFlag != null">
+    	and a.capture_flag=#{captureFlag}
+   	</if>
+   	order by a.show_order
+   	<if test="sortKey == 'createTime'">
+    	,a.create_time ${sortType}
+   	</if>
+   	<if test="sortKey == 'albumNameKey'">
+    	,a.album_name ${sortType}
+   	</if>
+
+
+	<if test="pageUtil.paging == true" >
+		limit ${pageUtil.pageOffset},${pageUtil.pageSize} 
+	</if>
+</select>
+
+<!-- //////////////////////////////////////////////////////////// -->
+
+
+
+
+<insert id="addAlbum"  parameterType="com.db.bms.entity.Album" >
+  insert into bus_album(album_no,show_order,album_id,album_name,album_cover,check_code,status,album_label,album_desc,pic_size,pic_format,pic_height,pic_width 
+  ,pic_name_len,pic_desc_len,capture_flag,operator_no,company_no,group_id,template_id,create_time, update_time)
+  values(#{albumNo},#{showOrder},#{albumId},#{albumName},#{albumCover,jdbcType=VARCHAR},#{checkCode,jdbcType=VARCHAR},#{status},#{albumLabel,jdbcType=VARCHAR},#{albumDesc,jdbcType=VARCHAR},
+  #{picSize,jdbcType=NUMERIC},#{picFormat,jdbcType=VARCHAR},#{picHeight,jdbcType=VARCHAR},#{picWidth,jdbcType=VARCHAR},#{picNameLen,jdbcType=NUMERIC},#{picDescLen,jdbcType=NUMERIC},
+  #{captureFlag},#{operatorNo,jdbcType=NUMERIC},#{companyNo},#{groupId},#{templateId,jdbcType=NUMERIC},
+  #{createTime},#{updateTime}  
+  )
+</insert>
+
+<update id="updateAlbum" parameterType="com.db.bms.entity.Album" >
+  update bus_album set show_order=#{showOrder},album_name=#{albumName},album_cover=#{albumCover,jdbcType=VARCHAR},check_code=#{checkCode,jdbcType=VARCHAR},status=#{status},album_label=#{albumLabel,jdbcType=VARCHAR}
+  ,album_desc=#{albumDesc,jdbcType=VARCHAR},pic_size=#{picSize,jdbcType=NUMERIC},pic_format=#{picFormat,jdbcType=VARCHAR},pic_height=#{picHeight,jdbcType=VARCHAR},pic_width=#{picWidth,jdbcType=VARCHAR},
+  pic_name_len=#{picNameLen,jdbcType=NUMERIC},pic_desc_len=#{picDescLen,jdbcType=NUMERIC},capture_flag=#{captureFlag},company_no=#{companyNo},template_id=#{templateId,jdbcType=NUMERIC},update_time=#{updateTime}
+  where album_no=#{albumNo}
+</update>
+
+<update id="updateAlbumStatus">
+ update bus_album set status=#{status},update_time=#{updateTime} where album_no in
+ <foreach item="item" index="index" collection="albumNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</update>
+
+<delete id="deleteAlbumsById" parameterType="java.lang.Long">
+  delete from bus_album a where a.album_no in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+<select id="findResourceAlbumCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Album">
+   select count(1) from bus_album a
+   where exists (select 'x' from bus_resource_album_map m where a.album_no=m.album_id and m.resource_id=#{resourceId} and m.type=#{type})
+   <if test="abm.groupId != null" >
+   		or (a.group_id=#{abm.groupId} or a.operator_no=#{abm.groupId}) 
+   </if>   
+   <if test="abm.allocResourceIds != null and abm.allocResourceIds.size > 0">
+      or a.album_no in
+      <foreach item="item" index="index" collection="abm.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="abm.allocResourceIds == null or abm.allocResourceIds.size == 0">
+      <if test="abm.operatorNo != null">
+       and a.operator_no=#{abm.operatorNo}
+      </if>
+   </if>
+   <if test="abm.companyNo != null and abm.companyNo != ''">
+   	and a.COMPANY_NO = #{abm.companyNo}
+   </if>
+   <if test="abm.albumName != null and abm.albumName != ''">
+     and a.album_name like &apos;%${abm.albumName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="abm.status != null">
+     and a.status=#{abm.status}
+   </if>
+   <if test="abm.captureFlag != null">
+    and a.capture_flag=#{abm.captureFlag}
+   </if>
+</select>
+
+<select id="findResourceAlbums" resultMap="albumChild"  parameterType="com.db.bms.entity.Album">
+	<if test="abm.pageUtil.paging == true" >
+	    <choose>
+		  <when test="abm.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+	</if>
+select a.album_no,a.show_order,a.album_id,a.album_name,a.album_cover,a.check_code,a.status,a.album_label,a.album_desc,a.pic_size,
+a.pic_format,a.pic_height,a.pic_width,a.pic_name_len,a.pic_desc_len,a.capture_flag,a.operator_no,a.company_no,a.group_id,a.template_id,a.create_time,a.update_time,m.id,m.created_by 
+from bus_album a,bus_resource_album_map m
+where a.album_no=m.album_id and m.resource_id=#{resourceId} and m.type=#{type} 
+	<if test="abm.groupId != null">
+   		or (a.group_id=#{abm.groupId} or a.operator_no=#{abm.groupId}) 
+   </if>   
+   <if test="abm.allocResourceIds != null and abm.allocResourceIds.size > 0">
+      or a.album_no in
+      <foreach item="item" index="index" collection="abm.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="abm.allocResourceIds == null or abm.allocResourceIds.size == 0">
+      <if test="abm.operatorNo != null">
+       and a.operator_no=#{abm.operatorNo}
+      </if>
+   </if>
+   <if test="abm.companyNo != null and abm.companyNo != ''">
+   	and a.COMPANY_NO = #{abm.companyNo}
+   </if>
+   <if test="abm.albumName != null and abm.albumName != ''">
+     and a.album_name like &apos;%${abm.albumName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="abm.status != null">
+     and a.status=#{abm.status}
+   </if>
+   <if test="abm.captureFlag != null">
+    and a.capture_flag=#{abm.captureFlag}
+   </if>
+   order by a.show_order
+   <if test="abm.sortKey == 'createTime'">
+           ,a.create_time ${abm.sortType}
+   </if>
+   <if test="abm.sortKey == 'albumNameKey'">
+           ,a.album_name ${abm.sortType}
+   </if>
+   <if test="abm.pageUtil.paging == true" >
+      <choose>
+		<when test="abm.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${abm.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${abm.pageUtil.lastRowCount}) where rownum_ &gt;
+			${abm.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+  </if>
+</select>
+
+<select id="findColumnAlbumCountNoSelect" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Album">
+   select count(1) from bus_album a 
+   where 1=1  
+	<if test="abm.groupId != null or (abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0)">
+	and (
+	</if>
+	<if test="abm.groupId != null">
+   	(a.group_id=#{abm.groupId} or a.operator_no=#{abm.groupId}) 
+   </if>
+   <if test="abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0">
+      or a.album_no in
+      <foreach item="item" index="index" collection="abm.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="abm.groupId != null or (abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0)">
+	)
+	</if>
+   <if test="abm.allocResourceIds == null or abm.allocResourceIds.size == 0">
+      <if test="abm.operatorNo != null">
+       and a.operator_no=#{abm.operatorNo}
+      </if>
+   </if>
+   <if test="abm.companyNo != null and abm.companyNo != ''">
+   	and a.company_no = #{abm.companyNo}
+   </if>
+   <if test="abm.albumName != null and abm.albumName != ''">
+     and a.album_name like &apos;%${abm.albumName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="abm.status != null">
+     and a.status=#{abm.status}
+   </if>
+   <if test="abm.captureFlag != null">
+    and a.capture_flag=#{abm.captureFlag}
+   </if>
+   and not exists (select m.album_id from bus_resource_album_map m where a.album_no=m.album_id and m.type=#{type} and m.resource_id=#{resourceId})
+   and exists (select bra.album_id from bus_resource_album_map bra where a.album_no=bra.album_id and bra.type=1 and bra.resource_id=#{topicId} )
+</select>
+
+<select id="findColumnAlbumsNoSelect" resultMap="albumChild"  parameterType="com.db.bms.entity.Album">
+	    <choose>
+		  <when test="abm.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+select a.album_no,a.show_order,a.album_id,a.album_name,a.album_cover,a.check_code,a.status,a.album_label,a.album_desc,a.pic_size,
+a.pic_format,a.pic_height,a.pic_width,a.pic_name_len,a.pic_desc_len,a.capture_flag,a.operator_no,a.company_no,a.group_id,a.template_id,a.create_time,a.update_time 
+from bus_album a 
+where 1=1  
+	<if test="abm.groupId != null or (abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0)">
+	and (
+	</if>
+	<if test="abm.groupId != null">
+   	(a.group_id=#{abm.groupId} or a.operator_no=#{abm.groupId}) 
+   </if>
+   <if test="abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0">
+      or a.album_no in
+      <foreach item="item" index="index" collection="abm.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="abm.groupId != null or (abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0)">
+	)
+	</if>
+   <if test="abm.allocResourceIds == null or abm.allocResourceIds.size == 0">
+      <if test="abm.operatorNo != null">
+       and a.operator_no=#{abm.operatorNo}
+      </if>
+   </if>
+   <if test="abm.companyNo != null and abm.companyNo != ''">
+   	and a.company_no = #{abm.companyNo}
+   </if>
+   <if test="abm.albumName != null and abm.albumName != ''">
+     and a.album_name like &apos;%${abm.albumName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="abm.status != null">
+     and a.status=#{abm.status}
+   </if>
+   <if test="abm.captureFlag != null">
+    and a.capture_flag=#{abm.captureFlag}
+   </if>
+   and not exists (select m.album_id from bus_resource_album_map m where a.album_no=m.album_id and m.type=#{type} and m.resource_id=#{resourceId})
+   and exists (select bra.album_id from bus_resource_album_map bra where a.album_no=bra.album_id and bra.type=1 and bra.resource_id=#{topicId} )
+   order by a.show_order
+   <if test="abm.sortKey == 'createTime'">
+           ,a.create_time ${abm.sortType}
+   </if>
+   <if test="abm.sortKey == 'albumNameKey'">
+           ,a.album_name ${abm.sortType}
+   </if>
+      <choose>
+		<when test="abm.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${abm.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${abm.pageUtil.lastRowCount}) where rownum_ &gt;
+			${abm.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select>
+
+<select id="findResourceAlbumCountNoSelect" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Album">
+   select count(1) from bus_album a 
+   where 1=1  
+	<if test="abm.groupId != null or (abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0)">
+	and (
+	</if>
+	<if test="abm.groupId != null">
+   	(a.group_id=#{abm.groupId} or a.operator_no=#{abm.groupId}) 
+   </if>
+   <if test="abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0">
+      or a.album_no in
+      <foreach item="item" index="index" collection="abm.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="abm.groupId != null or (abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0)">
+	)
+	</if>
+   <if test="abm.allocResourceIds == null or abm.allocResourceIds.size == 0">
+      <if test="abm.operatorNo != null">
+       and a.operator_no=#{abm.operatorNo}
+      </if>
+   </if>
+   <if test="abm.companyNo != null and abm.companyNo != ''">
+   	and a.company_no = #{abm.companyNo}
+   </if>
+   <if test="abm.albumName != null and abm.albumName != ''">
+     and a.album_name like &apos;%${abm.albumName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="abm.status != null">
+     and a.status=#{abm.status}
+   </if>
+   <if test="abm.templateId != null and abm.templateId == -1">
+     and a.template_id is not null
+   </if>
+   <if test="abm.captureFlag != null">
+    and a.capture_flag=#{abm.captureFlag}
+   </if>
+   and not exists (select m.album_id from bus_resource_album_map m where a.album_no=m.album_id and m.type=#{type} and m.resource_id=#{resourceId})
+</select>
+
+<select id="findResourceAlbumsNoSelect" resultMap="albumChild"  parameterType="com.db.bms.entity.Album">
+	    <choose>
+		  <when test="abm.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+select a.album_no,a.show_order,a.album_id,a.album_name,a.album_cover,a.check_code,a.status,a.album_label,a.album_desc,a.pic_size,
+a.pic_format,a.pic_height,a.pic_width,a.pic_name_len,a.pic_desc_len,a.capture_flag,a.operator_no,a.company_no,a.group_id,a.template_id,a.create_time,a.update_time 
+from bus_album a 
+where 1=1  
+	<if test="abm.groupId != null or (abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0)">
+	and (
+	</if>
+	<if test="abm.groupId != null">
+   	(a.group_id=#{abm.groupId} or a.operator_no=#{abm.groupId}) 
+   </if>
+   <if test="abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0">
+      or a.album_no in
+      <foreach item="item" index="index" collection="abm.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+   </if>
+   <if test="abm.groupId != null or (abm.allocResourceIds != null and abm.allocResourceIds.size &gt; 0)">
+	)
+	</if>
+   <if test="abm.allocResourceIds == null or abm.allocResourceIds.size == 0">
+      <if test="abm.operatorNo != null">
+       and a.operator_no=#{abm.operatorNo}
+      </if>
+   </if>
+   <if test="abm.companyNo != null and abm.companyNo != ''">
+   	and a.company_no = #{abm.companyNo}
+   </if>
+   <if test="abm.albumName != null and abm.albumName != ''">
+     and a.album_name like &apos;%${abm.albumName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="abm.status != null">
+     and a.status=#{abm.status}
+   </if>
+   <if test="abm.templateId != null and abm.templateId == -1">
+     and a.template_id is not null
+   </if>
+   <if test="abm.captureFlag != null">
+    and a.capture_flag=#{abm.captureFlag}
+   </if>
+   and not exists (select m.album_id from bus_resource_album_map m where a.album_no=m.album_id and m.type=#{type} and m.resource_id=#{resourceId})
+   order by a.show_order
+   <if test="abm.sortKey == 'createTime'">
+           ,a.create_time ${abm.sortType}
+   </if>
+   <if test="abm.sortKey == 'albumNameKey'">
+           ,a.album_name ${abm.sortType}
+   </if>
+      <choose>
+		<when test="abm.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${abm.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${abm.pageUtil.lastRowCount}) where rownum_ &gt;
+			${abm.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+</select>
+
+<select id="findAllResourceAlbum" resultMap="album" >
+select distinct a.album_no,a.album_id,a.album_name,a.album_cover,a.check_code,a.status,a.album_label,a.album_desc,a.pic_size,
+a.pic_format,a.pic_height,a.pic_width,a.pic_name_len,a.pic_desc_len,a.capture_flag,a.operator_no,a.company_no,a.group_id,a.template_id,a.create_time,a.update_time 
+from bus_album a,bus_resource_album_map m
+where a.album_no=m.album_id and m.type=#{type} and a.status=#{status} and m.resource_id in 
+   <foreach item="item" index="index" collection="resourceIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+order by a.album_no desc 
+</select>
+
+<select id="findTopicPublishAlbumCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Album">
+select count(1) from bus_album a,bus_resource_publish_map m
+where a.album_no=m.resource_id 
+<if test="parentType != null">
+   	and m.parent_type=#{parentType}
+</if>
+<if test="parentId != null">
+    and m.parent_id=#{parentId}
+</if>
+<if test="type != null">
+	and m.type=#{type}
+</if>
+<if test="abm.groupId != null">
+	and (a.group_id=#{abm.groupId} or a.operator_no=#{abm.groupId}) 
+</if>
+<if test="abm.companyNo != null">
+	and a.company_no=#{abm.companyNo}
+</if>
+<if test="abm.allocResourceIds != null and abm.allocResourceIds.size > 0">
+	<if test="abm.operatorNo != null">
+    	and (a.operator_no=#{abm.operatorNo} or a.album_no in
+      	<foreach item="item" index="index" collection="abm.allocResourceIds" open="(" separator="," close=")">
+      		#{item}
+     	</foreach>
+      	) 
+	</if>
+</if>
+<if test="abm.allocResourceIds == null or abm.allocResourceIds.size &lt;= 0">
+	<if test="abm.operatorNo != null">
+       and a.operator_no=#{abm.operatorNo}
+    </if>
+</if>
+<if test="abm.albumName != null and abm.albumName != ''">
+	and a.album_name like &apos;%${abm.albumName}%&apos; <!-- escape '_' , see GV-32 -->
+</if>
+<if test="abm.status != null">
+	and a.status=#{abm.status}
+</if>
+<if test="abm.captureFlag != null">
+	and a.capture_flag=#{abm.captureFlag}
+</if>
+</select>
+
+<select id="findTopicPublishAlbums" resultMap="albumChild"  parameterType="com.db.bms.entity.Album">
+	<if test="abm.pageUtil.paging == true" >
+	    <choose>
+		  <when test="abm.pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+	 </if>
+select a.album_no,a.show_order,a.album_id,a.album_name,a.album_cover,a.check_code,a.status,a.album_label,a.album_desc,a.pic_size,
+a.pic_format,a.pic_height,a.pic_width,a.pic_name_len,a.pic_desc_len,a.capture_flag,a.operator_no,a.company_no,a.group_id,a.template_id,a.create_time,a.update_time 
+from bus_album a,bus_resource_publish_map m
+where a.album_no=m.resource_id 
+   <if test="parentType != null">
+   and m.parent_type=#{parentType}
+   </if>
+   <if test="parentId != null">
+    and m.parent_id=#{parentId}
+   </if>
+   <if test="type != null">
+       and m.type=#{type}
+   </if>
+   <if test="parentIds != null and parentIds.length > 0">
+   and m.parent_id in 
+   <foreach item="item" index="index" collection="parentIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+   </if>
+   <if test="abm.groupId != null">
+   and (a.group_id=#{abm.groupId} or a.operator_no=#{abm.groupId}) 
+   </if>
+   <if test="abm.companyNo != null">
+     and a.company_no=#{abm.companyNo}
+   </if>
+   <if test="abm.allocResourceIds != null and abm.allocResourceIds.size > 0">
+    <if test="abm.operatorNo != null">
+      and (a.operator_no=#{abm.operatorNo} or a.album_no in
+      <foreach item="item" index="index" collection="abm.allocResourceIds" open="(" separator="," close=")">
+      #{item}
+     </foreach>
+      ) 
+   </if>
+   </if>
+   <if test="abm.allocResourceIds == null or abm.allocResourceIds.size &lt;= 0">
+      <if test="abm.operatorNo != null">
+       and a.operator_no=#{abm.operatorNo}
+      </if>
+   </if>
+   <if test="abm.albumName != null and abm.albumName != ''">
+     and a.album_name like &apos;%${abm.albumName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="abm.status != null">
+     and a.status=#{abm.status}
+   </if>
+   <if test="abm.captureFlag != null">
+    and a.capture_flag=#{abm.captureFlag}
+   </if>
+   order by a.show_order
+   <if test="abm.sortKey == 'createTime'">
+           ,a.create_time ${abm.sortType}
+   </if>
+   <if test="abm.sortKey == 'albumNameKey'">
+           ,a.album_name ${abm.sortType}
+   </if>
+   	<if test="abm.pageUtil.paging == true" >
+      <choose>
+		<when test="abm.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${abm.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${abm.pageUtil.lastRowCount}) where rownum_ &gt;
+			${abm.pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+   </if>
+</select>
+
+<select id="getAlbumCountByTemplateId" resultType="java.lang.Integer" parameterType="java.lang.Long">
+ select count(1) from bus_album a where a.template_id=#{templateId}
+</select>
+
+</mapper>

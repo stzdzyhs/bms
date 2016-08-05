@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.db.bms.dao.FeatureCodeMapper">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="featureCode" type="com.db.bms.entity.FeatureCode" >
+	<id column="FEATURECODE_feature_code_no" 	property="featureCodeNo"/>
+	<result column="FEATURECODE_feature_code_val" 	property="featureCodeVal"/>
+	<result column="FEATURECODE_feature_code_type"  property="featureCodeType"/>
+    <result column="FEATURECODE_feature_code_desc"  property="featureCodeDesc" />
+    <result column="FEATURECODE_create_time" 		property="createTime" />
+    <result column="FEATURECODE_operator_no" 		property="operatorNo" />
+    <result column="FEATURECODE_update_time" 		property="updateTime" />
+    <result column="FEATURECODE_group_id" 			property="groupId" />
+    <result column="FEATURECODE_status" 			property="status" />
+</resultMap>
+
+    
+<resultMap id="mapFeatureCode" type="com.db.bms.entity.FeatureCode" extends="featureCode">
+    <association property="operator" resultMap="com.db.bms.dao.OperatorMapper.map2Operator"/>
+
+	<association property="feacodeGroupMap" javaType="com.db.bms.entity.FeacodeGroupMap">
+		<id 	column="CODE_GROUMP_no" 				  property="feacodeGroupMapNo"/>
+		<result column="CODE_GROUMP_feature_code_no"      property="featureCodeNo"/>
+		<result column="CODE_GROUMP_group_no"    	 	  property="groupNo"/>
+	</association>
+	
+	<association property="featureCodeGroup" resultMap="com.db.bms.dao.FeatureCodeGroupMapper.map2FeatureCodeGroup" />
+</resultMap>
+
+<!-- table fileds -->
+<sql id="fieldsFeatureCode">
+	bus_feature_code.feature_code_no   		FEATURECODE_feature_code_no,
+	bus_feature_code.feature_code_val	  	FEATURECODE_feature_code_val,
+	bus_feature_code.feature_code_type	  	FEATURECODE_feature_code_type,
+	bus_feature_code.feature_code_desc	  	FEATURECODE_feature_code_desc,
+	bus_feature_code.operator_no	  		FEATURECODE_operator_no,
+	bus_feature_code.create_time	  		FEATURECODE_create_time,
+	bus_feature_code.update_time	  		FEATURECODE_update_time,
+	bus_feature_code.group_id	  			FEATURECODE_group_id,
+	bus_feature_code.status		  			FEATURECODE_status
+</sql>
+
+<resultMap id='map2FeatureCode' type='com.db.bms.entity.FeatureCode' >
+	<id column='featureCode_featureCodeNo' property='featureCodeNo'/>
+	<result column='featureCode_featureCodeDesc' property='featureCodeDesc'/>
+	<result column='featureCode_featureCodeType' property='featureCodeType'/>
+	<result column='featureCode_featureCodeVal' property='featureCodeVal'/>
+	<result column='featureCode_operatorNo' property='operatorNo'/>
+	<result column='featureCode_createTime' property='createTime'/>
+	<result column='featureCode_updateTime' property='updateTime'/>
+	<result column='featureCode_groupId' property='groupId'/>
+	<result column='featureCode_status' property='status'/>
+</resultMap>
+
+<resultMap id='map2FeatureCodeExt' type='com.db.bms.entity.FeatureCode' extends='map2FeatureCode' >
+	<association property="operator" resultMap="com.db.bms.dao.OperatorMapper.map2Operator" />
+
+</resultMap>
+
+<sql id='fields2FeatureCode'>
+	featureCode.feature_code_no   featureCode_featureCodeNo,
+	featureCode.feature_code_desc featureCode_featureCodeDesc,
+	featureCode.feature_code_type featureCode_featureCodeType,
+	featureCode.feature_code_val  featureCode_featureCodeVal,
+	featureCode.operator_no       featureCode_operatorNo,
+	featureCode.create_time       featureCode_createTime,
+	featureCode.update_time       featureCode_updateTime,
+	featureCode.group_id          featureCode_groupId,
+	featureCode.status            featureCode_status
+</sql>
+
+<sql id="fieldsFeacodeGroupMap">
+	bus_feacode_group_map.feacode_group_map_no   	CODE_GROUMP_no,
+	bus_feacode_group_map.feature_code_no   		CODE_GROUMP_feature_code_no,
+	bus_feacode_group_map.group_no				CODE_GROUMP_group_no
+</sql>
+
+<sql id="fieldsFeatureCodeGroup">
+	bus_feature_code_group.group_no 			group_group_no,
+	bus_feature_code_group.group_id 			group_group_id,
+	bus_feature_code_group.group_name			group_group_name,
+	bus_feature_code_group.create_time			group_create_time,
+	bus_feature_code_group.operator_no			group_operator_no,
+	bus_feature_code_group.update_time			group_update_time
+</sql>
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="featureCode.pageUtil.paging == true" >
+		limit ${featureCode.pageUtil.pageOffset},${featureCode.pageUtil.pageSize} 
+	</if>
+</sql>
+<!-- //////////////////////////////////////////// -->
+<sql id="filterSearch">
+	<if test="featureCode.featureCodeVal != null &amp;&amp; featureCode.featureCodeVal.length() > 0">
+		and featureCode.feature_code_val like &apos;%${featureCode.featureCodeVal}%&apos;
+	</if>
+	<if test="featureCode.featureCodeType != null &amp;&amp; featureCode.featureCodeType.length() > 0">
+		and featureCode.feature_code_type = #{featureCode.featureCodeType}
+	</if>
+	<if test="featureCode.status != null">
+		and featureCode.status = #{featureCode.status}
+	</if>
+	
+	<if test="featureCode.groupNo != null &amp;&amp; featureCode.groupNo != ''">
+		<!-- 分组管理新增特征码时，查询未分组和不属于当前组的特征码 -->
+		and featureCode.feature_code_no not in (
+			select feature_code_no from BUS_FEACODE_GROUP_MAP 
+				where BUS_FEACODE_GROUP_MAP.group_no = #{featureCode.groupNo})
+	</if>
+	
+	<!-- 权限管理 -->
+	 <if test="featureCode.groupId != null">
+   		and (featureCode.group_id=#{featureCode.groupId} 
+   				or featureCode.operator_no=#{featureCode.groupId})
+    </if>
+	
+	<if test="featureCode.allocResourceIds != null and featureCode.allocResourceIds.size &gt; 0">
+	    <if test="featureCode.operatorNo != null">
+			and (featureCode.operator_no=#{featureCode.operatorNo} 
+				or featureCode.feature_code_no in
+			<foreach item="item" index="index" collection="featureCode.allocResourceIds" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+			) 
+	   </if>
+   </if>
+	<if test="featureCode.allocResourceIds == null or featureCode.allocResourceIds.size &lt;= 0">
+		<if test="featureCode.operatorNo != null">
+		 	and featureCode.operator_no=#{featureCode.operatorNo}
+		</if>
+	</if>	
+</sql>
+
+<!-- /////////////////////////////////////// -->
+
+<select id="getFeatureCodesCount" resultType="java.lang.Integer" parameterType="com.db.bms.entity.FeatureCode">
+	select count(1)
+	from bus_feature_code featureCode 
+	where 1=1
+	<include refid="filterSearch" />
+</select>
+
+<select id="getFeatureCodes" resultMap="map2FeatureCodeExt" parameterType="com.db.bms.entity.FeatureCode">
+	<include refid="pagePrefix"/>
+
+<!-- NOTE: featureCodeGroup - featureCode relation: m:n --> 	
+	select <include refid="fields2FeatureCode"/>,
+	       <include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/> 
+		   <!-- <include refid="fieldsFeacodeGroupMap"/>, -->
+<!-- 		   <include refid="com.db.bms.dao.FeatureCodeGroupMapper.fields2FeatureCodeGroup"/> -->
+	from bus_feature_code featureCode 
+	left join sys_operator operator on operator.operator_no = featureCode.operator_no
+<!-- 	
+	left join bus_feacode_group_map on bus_feacode_group_map.feature_code_no = featureCode.feature_code_no 
+	left join bus_feature_code_group fcg on bus_feacode_group_map.group_no = fcg.group_no -->
+	where 1=1
+	<include refid="filterSearch" />
+	order by featureCode.update_time desc,featureCode.feature_code_no desc 
+	<include refid="pageSuffix"/>
+</select>
+
+<update id="update" parameterType="com.db.bms.entity.FeatureCode">
+	 update bus_feature_code set 
+	 	bus_feature_code.feature_code_val=#{featureCodeVal},
+	 	bus_feature_code.feature_code_type=#{featureCodeType},
+	 	bus_feature_code.feature_code_desc=#{featureCodeDesc},
+	 	bus_feature_code.status=#{status,jdbcType=NUMERIC},
+		bus_feature_code.update_time=#{updateTime}
+  	where 
+  		bus_feature_code.feature_code_no=#{featureCodeNo}
+</update>
+
+<update id="updateFeatureCodeStatus" parameterType="com.db.bms.entity.FeatureCode">
+	update bus_feature_code set
+		bus_feature_code.status=#{status},
+		bus_feature_code.update_time=#{updateTime}
+	where feature_code_no in
+    <foreach item="item" index="index" collection="feaNos" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</update>
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	select S_FEATURE.nextVal from dual
+</select>
+
+<insert id="save" parameterType="com.db.bms.entity.FeatureCode">
+	insert into bus_feature_code 
+		(feature_code_no,feature_code_val,feature_code_type,feature_code_desc,operator_no,create_time,update_time,group_id,status)
+	values 
+		(#{featureCodeNo,jdbcType=NUMERIC},
+		#{featureCodeVal,jdbcType=VARCHAR},
+		#{featureCodeType,jdbcType=VARCHAR},
+		#{featureCodeDesc,jdbcType=VARCHAR},
+		#{operatorNo,jdbcType=NUMERIC},
+		#{createTime,jdbcType=VARCHAR},
+		#{updateTime,jdbcType=VARCHAR},
+		#{groupId,jdbcType=NUMERIC},
+		#{status,jdbcType=NUMERIC}
+		)
+	
+</insert>
+
+<select id="getFeatureCodesById" resultMap="featureCode" parameterType="java.lang.Long">
+	   select <include refid="fieldsFeatureCode"/>
+	   from bus_feature_code where feature_code_no in
+	   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+	      #{item}
+	   </foreach>
+</select>
+
+<select id="getFeatureCodeById" parameterType="java.lang.Long" resultMap="featureCode">
+	select <include refid="fieldsFeatureCode"/>
+		from bus_feature_code 
+	where bus_feature_code.feature_code_no=#{featureCodeNo}
+</select>
+
+<select id="checkFeatureCode" parameterType="com.db.bms.entity.FeatureCode" resultType="java.lang.Integer">
+	select count(0) from bus_feature_code where 1=1
+	<if test="featureCodeVal != null &amp;&amp; featureCodeVal != ''">
+		and bus_feature_code.feature_code_val = #{featureCodeVal}
+	</if>
+</select>
+<select id="featureCodeDetail" parameterType="java.lang.Long" resultMap="mapFeatureCode">
+	select <include refid="fieldsFeatureCode"/> ,
+		   <include refid="com.db.bms.dao.OperatorMapper.fields2Operator" />
+	from bus_feature_code 
+	left join sys_operator operator on operator.operator_no = bus_feature_code.operator_no
+	where bus_feature_code.feature_code_no = #{featureCodeNo}
+</select>
+
+<delete id="deletefeatureCodesById" parameterType="java.lang.Long">
+   delete from bus_feature_code where feature_code_no in 
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+<select id="findFeatureCodesByVal" resultMap="featureCode" parameterType="java.lang.String">
+	   select <include refid="fieldsFeatureCode"/>
+	   from bus_feature_code where feature_code_val in
+	   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+	      #{item}
+	   </foreach>
+</select>
+
+<sql id="filterByOperatorForWrite"> <!-- write: update/delete -->
+	<choose>
+		<when test="featureCode.curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin, empty -->
+		</when>
+		<when test="featureCode.curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+			and (bus_feature_code.operator_no = #{featureCode.operatorNo} or sys_operator.create_by=#{featureCode.operatorNo})
+		</when>
+		<when test="featureCode.curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			and bus_feature_code.operator_no = #{featureCode.operatorNo}
+		</when>
+		<otherwise>
+			and 1=0
+		</otherwise>
+	</choose>
+</sql>
+
+<!-- <select id="isFeatureCodeExit" parameterType="com.db.bms.entity.FeatureCode" resultType="java.lang.Integer">
+	select count(1) from bus_feature_code 
+		left join sys_operator on bus_feature_code.operator_no=sys_operator.operator_no 
+	where bus_feature_code.feature_code_no = #{featureCode.featureCodeNo}
+	<include refid="filterByOperatorForWrite" />
+</select> -->
+
+
+
+<select id="findStrategyFeatureCodeNoSelectCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.FeatureCode">
+	select count(1) 
+	from bus_feature_code featureCode
+	where status=1  <!-- not show disabled feature code -->
+	<if test="strategyNo!=null" >
+	</if>
+	<if test="strategyNo==null" > <!-- companyNo must no null -->
+	</if> 
+	<if test="featureCode.featureCodeDesc != null &amp;&amp; featureCode.featureCodeDesc.length() > 0">
+		and featureCode.feature_code_desc like &apos;%${featureCode.featureCodeDesc}%&apos;
+	</if>
+	<if test="excludeIds != null" >
+		and featureCode.feature_code_no not in 
+	    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+	   		#{item}
+		</foreach>
+	</if>
+</select>
+
+<select id="findStrategyFeatureCodeNoSelect" resultMap="map2FeatureCode"  parameterType="com.db.bms.entity.FeatureCode">
+	<include refid="pagePrefix"></include>
+	select <include refid="fields2FeatureCode"/> 
+	from bus_feature_code featureCode
+	where status=1  <!-- not show disabled feature code -->
+	<if test="strategyNo!=null" >
+	<!-- this should NOT check
+		and featureCode.feature_code_no not in ( select sc.condition_id from bus_strategy_condition sc where sc.strategy_no=#{strategyNo} 
+			and sc.condition_type= ${@com.db.bms.entity.StrategyCondition@TYPE_FEATURE_CODE} )
+	-->		 
+	</if>
+	<if test="strategyNo==null" > <!-- companyNo must no null -->
+	</if> 
+	<if test="featureCode.featureCodeDesc != null &amp;&amp; featureCode.featureCodeDesc.length() > 0">
+		and featureCode.feature_code_desc like &apos;%${featureCode.featureCodeDesc}%&apos;
+	</if>
+	<if test="excludeIds != null" >
+		and featureCode.feature_code_no not in 
+	    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+	   		#{item}
+		</foreach>
+	</if>
+	order by featureCode.update_time desc, featureCode.feature_code_no desc
+	<include refid="pageSuffix"></include>       
+</select>
+
+<!-- 特征码策略 -->
+<!-- <select id="findFeatureCodeWithStrategy" resultMap="mapFeatureCode"  parameterType="com.db.bms.entity.FeatureCode">
+	<include refid="pagePrefix"></include>
+
+	select <include refid="fields2Topic"/>,
+	<include refid="com.db.bms.dao.StrategyMapper.fields2Strategy"/>
+	from bus_feature_code c
+	left join (
+		select *
+		from bus_strategy_condition con 
+		where con.condition_type=${@com.db.bms.entity.StrategyCondition@TYPE_FEATURE_CODE}
+	) con on c.feature_code_no=con.condition_id
+	left join bus_strategy strategy on con.strategy_no = strategy.strategy_no
+	where 1=1;
+   	<if test="c.featureCodeNo != null">
+    	and c.feature_code_no=#{c.featureCodeNo}
+   	</if>
+   	<if test="c.featureCodeType != null">
+    	and c.feature_code_type=#{c.featureCodeType}
+   	</if>
+	order by c.feature_code_no desc
+	<include refid="pageSuffix"></include>	
+</select>
+
+<select id="findFeatureCodeWithStrategyCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.FeatureCode">
+	select count(1)
+	from bus_feature_code c
+	left join (
+		select *
+		from bus_strategy_condition con 
+		where con.condition_type=${@com.db.bms.entity.StrategyCondition@TYPE_FEATURE_CODE} 
+	) con on c.feature_code_no=con.condition_id
+	left join bus_strategy strategy on con.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="c.featureCodeNo != null">
+    	and c.feature_code_no=#{c.featureCodeNo}
+   	</if>
+   	<if test="c.featureCodeType != null">
+    	and c.feature_code_type=#{c.featureCodeType}
+   	</if>
+</select> -->
+
+</mapper>

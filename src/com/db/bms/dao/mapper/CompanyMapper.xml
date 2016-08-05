@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.CompanyMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="company" type="com.db.bms.entity.Company" >
+	<result column="company_no" property="companyNo"/>
+	<result column="company_id" property="companyId"/>
+	<result column="company_name" property="companyName"/>
+	<result column="company_describe" property="companyDescribe"/>
+	<result column="create_by" property="createBy"/>
+	<result column="create_time" property="createTime"/>
+	<result column="parent_id" property="parentId"/>
+	<result column="path" property="path"/>
+</resultMap>
+
+<!--/////////////// 级联递归查询  一对多 ///////////////-->
+<resultMap type="com.db.bms.entity.Company" id="companyChild" extends="company">
+	<association property="parent" select="findCompanyByNo" column="PARENT_ID">
+	</association>
+	<association property="operator" select="com.db.bms.dao.OperatorMapper.findOperatorById" column="CREATE_BY">
+	</association>
+	
+	<collection property="cardRegionList" ofType="com.db.bms.entity.CardRegion" select="com.db.bms.dao.CardRegionMapper.getCardRegionByCompanyNo" column="COMPANY_NO" >
+	</collection>
+</resultMap>
+
+<resultMap id='map2Company' type='com.db.bms.entity.Company' >
+	<id column='company_companyNo' property='companyNo'/>
+	<result column='company_companyId' property='companyId'/>
+	<result column='company_companyName' property='companyName'/>
+	<result column='company_companyDescribe' property='companyDescribe'/>
+	<result column='company_createBy' property='createBy'/>
+	<result column='company_createTime' property='createTime'/>
+	<result column='company_parentId' property='parentId'/>
+	<result column='company_path' property='path'/>
+</resultMap>
+
+<sql id='fields2Company'>
+	company.company_no           company_companyNo,
+	company.company_id           company_companyId,
+	company.company_name         company_companyName,
+	company.company_describe     company_companyDescribe,
+	company.create_by            company_createBy,
+	company.create_time          company_createTime,
+	company.parent_id            company_parentId,
+	company.path                 company_path
+</sql>
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="pageUtil.pageOffset==0">
+		         select *  from (
+		      </when>
+		      <otherwise>
+		     	 select * from (select row_.*, rownum rownum_ from (
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="pageUtil.pageOffset==0">
+		         )where rownum &lt;= ${pageUtil.lastRowCount}
+		      </when>
+		      <otherwise>
+		     	 ) row_ where rownum &lt;= ${pageUtil.lastRowCount}) where rownum_ &gt; ${pageUtil.pageOffset}
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+
+<sql id="pagePrefix2">
+	<if test="company.pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="company.pageUtil.pageOffset==0">
+		         select *  from (
+		      </when>
+		      <otherwise>
+		     	 select * from (select row_.*, rownum rownum_ from (
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix2">
+	<if test="company.pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="company.pageUtil.pageOffset==0">
+		         )where rownum &lt;= ${company.pageUtil.lastRowCount}
+		      </when>
+		      <otherwise>
+		     	 ) row_ where rownum &lt;= ${company.pageUtil.lastRowCount}) where rownum_ &gt; ${company.pageUtil.pageOffset}
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+<!-- /////////////////////////////////////////////////////////////////// -->
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	SELECT S_COMPANY.NEXTVAL FROM DUAL
+</select>
+
+<select id="findCompanyByNo" parameterType="java.lang.Long" resultMap="companyChild">
+	select c.COMPANY_NO,c.COMPANY_ID,c.COMPANY_NAME,c.COMPANY_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID,c.PATH
+		from bus_company c where c.COMPANY_NO=#{companyNo} 
+</select>
+
+<select id="findCompanysByNo"  resultMap="company" >
+	select COMPANY_NO,COMPANY_ID,COMPANY_NAME,COMPANY_DESCRIBE,CREATE_BY,CREATE_TIME,PARENT_ID,PATH 
+	from bus_company  where COMPANY_NO in 
+	 <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+</select>
+
+<select id="findCompanyByParentId" parameterType="java.lang.Long" resultMap="company">
+	select c.COMPANY_NO,c.COMPANY_ID,c.COMPANY_NAME,c.COMPANY_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID,c.PATH
+		from bus_company c where c.parent_id=#{parentId} 
+</select>
+
+<select id="findCompanyById" resultMap="companyChild" parameterType="java.lang.String">
+ select c.company_no,c.company_id,c.company_name,c.company_describe,c.create_by,c.create_time,c.parent_id,c.path
+ from bus_company c where c.company_id=#{companyId}
+</select>
+
+<select id="findCompanyByIds" resultMap="companyChild" parameterType="java.lang.String">
+ select c.company_no,c.company_id,c.company_name,c.company_describe,c.create_by,c.create_time,c.parent_id,c.path
+ from bus_company c where c.company_id in
+ 	 <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+</select>
+
+
+<!-- 查询,实体查询   -->
+<select id="findAllCompanys"  resultMap="companyChild" parameterType="com.db.bms.entity.Company">
+	select c.company_no,c.company_id,c.company_name,c.company_describe,c.create_by,c.create_time,c.parent_id,c.path from bus_company c where 1=1 
+   <if test="distCompanyList != null  and distCompanyList.size > 0" >
+       and c.company_no in
+       	 <foreach item="item" index="index" collection="distCompanyList" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+   </if>
+    order by c.path
+</select>
+
+<select id="findCompanyCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Company">
+   select count(1) from bus_company c where 1=1 
+   <if test="cmpy.path != null  and cmpy.path != '' " >
+       and c.path like &apos;${cmpy.path}%&apos; 
+       and c.path != #{cmpy.path}
+   </if>
+   <if test="cmpy.companyName != null  and cmpy.companyName != '' " >
+       and c.company_name like  &apos;%${cmpy.companyName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="distCompanyList != null  and distCompanyList.size > 0" >
+       and c.company_no in
+       	 <foreach item="item" index="index" collection="distCompanyList" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+   </if>
+</select>
+
+<select id="findCompanys" resultMap="companyChild"  parameterType="com.db.bms.entity.Company">
+	select c.company_no,c.company_id,c.company_name,c.company_describe,c.create_by,c.create_time,c.parent_id,c.path 
+    from bus_company c
+    where 1=1 
+   <if test="cmpy.path != null  and cmpy.path != '' " >
+       and c.path like &apos;${cmpy.path}%&apos; 
+       and c.path != #{cmpy.path}
+   </if>
+   <if test="cmpy.companyName != null  and cmpy.companyName != '' " >
+       and c.company_name like  &apos;%${cmpy.companyName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="distCompanyList != null  and distCompanyList.size > 0" >
+       and c.company_no in
+       	 <foreach item="item" index="index" collection="distCompanyList" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+   </if>
+	order by c.create_time,c.path
+	<if test="cmpy.pageUtil.paging == true" >
+		limit ${cmpy.pageUtil.pageOffset},${cmpy.pageUtil.pageSize} 
+	</if>	
+</select>
+
+<select id="getCompanyCountByIdOrName" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Company">
+    select count(1) from bus_company where 1=1 
+    <if test="companyNo != null  and companyNo > 0 " >
+    and COMPANY_NO != #{companyNo} 
+   </if>
+    <if test="companyId != null  and companyId != '' " >
+    and COMPANY_ID=#{companyId}
+   </if>
+   <if test="companyName != null and companyName != '' " >
+    and COMPANY_NAME=#{companyName}
+   </if>
+</select>
+
+<insert id="addCompany"  parameterType="com.db.bms.entity.Company" >
+    insert into bus_company(COMPANY_NO,COMPANY_ID,COMPANY_NAME,COMPANY_DESCRIBE,CREATE_BY,CREATE_TIME,PARENT_ID,PATH) 
+    values(#{companyNo},#{companyId},#{companyName},#{companyDescribe},#{createBy},#{createTime},#{parentId},#{path})
+</insert>
+
+<update id="updateCompany" parameterType="com.db.bms.entity.Company" >
+	update bus_company set COMPANY_ID=#{companyId},COMPANY_NAME=#{companyName},COMPANY_DESCRIBE=#{companyDescribe},PARENT_ID=#{parentId},PATH=#{path} where COMPANY_NO=#{companyNo}
+</update>
+
+<select id="findCompanysWithSubByNo"  resultMap="company" >
+    select c.company_no,c.company_id,c.company_name,c.company_describe,c.create_by,c.create_time,c.parent_id,c.path 
+    from bus_company c,
+    (select company_no,path from bus_company where company_no in 
+   <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    ) c1 
+    where c.company_no=c.company_no and c.path like c1.path || '%'
+</select>
+
+<delete id="deleteCompany" parameterType="com.db.bms.entity.Company">
+    delete from bus_company where COMPANY_NO=#{companyNo}
+</delete>
+
+<delete id="deleteCompanyCardRegionMapByCompanyNo">
+  delete from bus_company_card_region_map where company_no=#{companyNo}
+</delete>
+
+<delete id="deleteCompanyCardRegionMaps">
+delete from bus_company_card_region_map where company_no=#{companyNo} and region_id in
+   <foreach item="item" index="index" collection="regionIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+<insert id="addCompanyCardRegionMap">
+ insert into bus_company_card_region_map(company_no,region_id) values(#{companyNo},#{regionId})
+</insert>
+
+<select id="findCompanyCardRegionMapCountByRegionId" resultType="java.lang.Integer">
+   select count(1) from bus_company_card_region_map where region_id in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<select id="findCompanyCountById" resultType="java.lang.Integer">
+   select count(1) from bus_company c where c.company_id in
+   <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<select id="findDistCompanyByOperNo" resultMap="company"  parameterType="java.lang.Long">
+ select c.company_no,c.company_id,c.company_name,c.company_describe,c.create_by,c.create_time,c.parent_id,c.path 
+ from bus_company c,sys_operator_company o
+ where c.company_no=o.company_no and o.operator_no=#{operatorNo}
+</select>
+
+
+<!-- ///////////////////////////////////////////////////////////// -->
+
+<sql id="fliterSearch">
+<!--    <if test="path != null  and path != '' " > -->
+<!--        and path like &apos;${path}%&apos;  -->
+<!--        and path != #{path} -->
+<!--    </if> -->
+   <if test="companyId!= null  and companyId != '' " >
+       and company_id like  &apos;%${companyId}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="companyName != null  and companyName != '' " >
+       and company_name like  &apos;%${companyName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+</sql>
+
+<sql id="filterByOperatorForRead" >
+	<choose>
+		<when test="curOper.type==null">
+			and 1=0
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin, empty -->
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+			and (bus_company.company_no = #{curOper.companyNo}) 
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			and (bus_company.company_no = #{curOper.companyNo}) 
+		</when>
+		<otherwise>
+			and (1=0)
+		</otherwise>
+	</choose>
+</sql>	
+
+<!-- 查找operator关联company, 不包括子company -->
+<select id="findOperatorCompanys" resultMap="company"  parameterType="com.db.bms.entity.Company">
+	<include refid="pagePrefix"/>
+	
+   	select * from bus_company where 1=1
+   	<include refid="filterByOperatorForRead"/>
+	<include refid="fliterSearch"/>
+	
+	<include refid="pageSuffix"/>
+</select>
+<select id="findOperatorCompanysCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Company">
+   	select count(*) from bus_company where 1=1
+   	<include refid="filterByOperatorForRead"/>
+	<include refid="fliterSearch"/>
+</select>
+<!-- ////////////////////////////////////////////////////////////// -->
+
+<select id="findStrategyCompanyNoSelectCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Company">
+	select count(1)
+	from bus_company company
+	where 1=1
+	<if test="company.companyId!= null  and company.companyId != '' " >
+		and company.company_id like  &apos;%${company.companyId}%&apos; <!-- escape '_' , see GV-32 -->
+	</if>
+	<if test="company.companyName != null  and company.companyName != '' " >
+		and company.company_name like  &apos;%${company.companyName}%&apos; <!-- escape '_' , see GV-32 -->
+	</if>
+	<if test="excludeIds != null" >
+		and company.company_no not in 
+	    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+	   		#{item}
+		</foreach>
+	</if>
+	
+	<if test="strategyNo!= null" >
+		start with company.company_no=(select company_no from bus_strategy where strategy_no=#{strategyNo})
+	</if> 
+	<if test="strategyNo == null" > <!-- companyNo must no null -->
+		start with company.company_no=${companyNo}
+	</if>
+		connect by prior company.company_no = company.parent_id
+</select>
+
+<select id="findStrategyCompanyNoSelect" resultMap="map2Company"  parameterType="com.db.bms.entity.Space">
+	<include refid="pagePrefix2"/>
+	select <include refid="fields2Company"/> 
+	from bus_company company	
+	where 1=1
+	<if test="company.companyId!= null  and company.companyId != '' " >
+		and company.company_id like  &apos;%${company.companyId}%&apos; <!-- escape '_' , see GV-32 -->
+	</if>
+	<if test="company.companyName != null  and company.companyName != '' " >
+		and company.company_name like  &apos;%${company.companyName}%&apos; <!-- escape '_' , see GV-32 -->
+	</if>
+	
+<!-- this should NOT check 	
+	<if test="strategyNo!=null" >
+		and company.company_no not in ( select sc.condition_id from bus_strategy_condition sc 
+		    where sc.strategy_no=#{strategyNo} 
+			and sc.condition_type= ${@com.db.bms.entity.StrategyCondition@TYPE_COMPANY} ) 
+	</if>
+ -->
+ 	<if test="excludeIds != null" >
+		and company.company_no not in 
+	    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+	   		#{item}
+		</foreach>
+	</if>
+	
+	<if test="strategyNo!= null" >
+		start with company.company_no=(select company_no from bus_strategy where strategy_no=#{strategyNo})
+	</if> 
+	<if test="strategyNo == null" > <!-- companyNo must no null -->
+		start with company.company_no=${companyNo}
+	</if>
+		connect by prior company.company_no = company.parent_id
+	
+	order by level, company.company_no
+
+	<include refid="pageSuffix2"/>       
+</select>
+
+<!-- ................................................................................................ -->
+<select id="findCompanysCount1" parameterType="com.db.bms.entity.Company" resultType="java.lang.Integer">
+    <choose>
+    	<when test="company.companyName != null &amp;&amp; company.companyName != '' ">
+    		select count(0) from (select * from bus_company b 
+	   		<if test="company.curOper.operatorNo != -1">
+		   		start with
+		   		<choose>
+		   			<when test="company.companyNo != null &amp;&amp; company.companyNo != '' ">
+		   			b.company_no=#{company.companyNo}
+		   			</when>
+		   			<otherwise>
+		   			b.company_no=#{company.curOper.companyNo}
+		   			</otherwise>
+		   		</choose>
+		   		connect by prior b.company_no=b.parent_id
+	   		</if>
+			) bus where bus.company_name like &apos;${company.companyName}%&apos;
+    	</when>
+    	<otherwise>
+    		select count(1) from bus_company b 
+		   <if test="company.curOper.operatorNo != -1">
+		   		start with
+		   		<choose>
+		   			<when test="company.companyNo != null &amp;&amp; company.companyNo != '' ">
+		   			b.company_no=#{company.companyNo}
+		   			</when>
+		   			<otherwise>
+		   			b.company_no=#{company.curOper.companyNo}
+		   			</otherwise>
+		   		</choose>
+		   		connect by prior b.company_no=b.parent_id
+		   	</if>
+    	</otherwise>
+    </choose>
+</select>
+
+<select id="findCompanys1" resultMap="companyChild" parameterType="com.db.bms.entity.Company">
+	<include refid="pagePrefix"/>
+	
+	<if test="company.companyName != null &amp;&amp; company.companyName != '' ">
+		select bus.* from (
+	</if>
+    	select b.* from bus_company b 
+    	<if test="company.curOper.operatorNo != -1">
+    		start with
+    		<choose>
+    			<when test="company.companyNo != null &amp;&amp; company.companyNo != '' ">
+    			b.company_no=#{company.companyNo}
+    			</when>
+    			<otherwise>
+    			b.company_no=#{company.curOper.companyNo}
+    			</otherwise>
+    		</choose>
+    		connect by prior b.company_no=b.parent_id
+    	</if>
+    <if test="company.companyName != null &amp;&amp; company.companyName != '' ">
+		) bus where bus.company_name like &apos;%${company.companyName}%&apos;
+	</if>
+	
+	<include refid="pageSuffix" />
+</select>
+<!-- ////////////////////////////////////////////////////////////////////////////// -->
+
+<select id="findCompanyAndChildrenByNo" resultMap="map2Company">
+	<include refid="pagePrefix2"/>
+	
+	select <include refid="fields2Company"/>
+	from bus_company company
+	where 1=1
+	<if test="company.companyId!= null  and company.companyId != '' " >
+		and company.company_id like  &apos;%${company.companyId}%&apos; <!-- escape '_' , see GV-32 -->
+	</if>
+	<if test="company.companyName != null  and company.companyName != '' " >
+		and company.company_name like  &apos;%${company.companyName}%&apos; <!-- escape '_' , see GV-32 -->
+	</if>
+ 	<if test="excludeIds != null" >
+		and company.company_no not in 
+	    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+	   		#{item}
+		</foreach>
+	</if>	
+	start with company.company_no=${companyNo}
+	connect by prior company.company_no = company.parent_id
+	order by level,company.company_no
+		
+	<include refid="pageSuffix2"/>
+</select>
+
+<select id="findCompanyAndChildrenByNoCount" resultType="java.lang.Integer">
+	select count(1)
+	from bus_company company
+	where 1=1
+	<if test="company.companyId!= null  and company.companyId != '' " >
+		and company.company_id like  &apos;%${company.companyId}%&apos; <!-- escape '_' , see GV-32 -->
+	</if>
+	<if test="company.companyName != null  and company.companyName != '' " >
+		and company.company_name like  &apos;%${company.companyName}%&apos; <!-- escape '_' , see GV-32 -->
+	</if>
+ 	<if test="excludeIds != null" >
+		and company.company_no not in 
+	    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+	   		#{item}
+		</foreach>
+	</if>	
+	start with company.company_no=${companyNo}
+	connect by prior company.company_no = company.parent_id
+</select>
+
+
+</mapper>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.LogMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="log" type="com.db.bms.entity.Log" >
+<id column="LOG_NO" property="logNo"/>
+<result column="OPERATOR_NO" property="operatorNo"/>
+<result column="LOG_TYPE_NO" property="logTypeNo"/>
+<result column="LOG_DESCRIBE" property="logDescribe"/>
+<result column="LOG_TIME" property="logTime"/>
+<result column="COMPANY_NO" property="companyNo"/>
+</resultMap>
+
+<!--/////////////// 级联递归查询  一对多 ///////////////-->
+<resultMap type="com.db.bms.entity.Log" id="logChild" extends="log">
+  
+   <!-- 一对一关联   注意 顺序       需要用时开启 -->
+  <association property="operator" select="com.db.bms.dao.OperatorMapper.findOperatorById" column="OPERATOR_NO">
+  </association>
+  <association property="logType" select="com.db.bms.dao.LogTypeMapper.findLogTypeById" column="LOG_TYPE_NO"></association>
+  <association property="company" select="com.db.bms.dao.CompanyMapper.findCompanyByNo" column="COMPANY_NO">
+  </association>
+
+  
+  <!-- 一对多关联  -->
+   <!-- 
+  <collection property="listTbcContentModel" column="id" select="getChild">
+     
+  </collection>
+  -->
+  
+</resultMap>
+
+<!-- 查询 ,总行数,分页 ,模型 -->
+<select id="findLogCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Log">
+	select count(1) from sys_log where 1=1
+    <if test="operatorNo != null  and operatorNo != '' " >
+    and OPERATOR_NO=#{operatorNo}
+    </if>
+    <if test="logTypeNo != null  and logTypeNo != '' " >
+    and LOG_TYPE_NO=#{logTypeNo}
+    </if>
+    <if test="companyNo != null  and companyNo != '' " >
+    and COMPANY_NO=#{companyNo}
+    </if>
+    <if test="startDate != null  and startDate != '' " >
+    and LOG_TIME &gt;= #{startDate}
+    </if>
+    <if test="endDate != null  and endDate != '' " >
+    and LOG_TIME &lt;= #{endDate}
+    </if>
+    <if test="keyWord != null  and keyWord != '' " >
+    and LOG_DESCRIBE like  &apos;%${keyWord}%&apos;
+    </if>
+</select>
+
+<!-- 查询,排序,分页,模型  -->
+<select id="findLogs" resultMap="logChild"  parameterType="com.db.bms.entity.Log">
+	select LOG_NO,OPERATOR_NO,LOG_TYPE_NO,LOG_DESCRIBE,LOG_TIME,COMPANY_NO
+	from sys_log where 1=1 
+	<if test="operatorNo != null  and operatorNo != '' " >
+    and OPERATOR_NO=#{operatorNo}
+    </if>
+    <if test="logTypeNo != null  and logTypeNo != '' " >
+    and LOG_TYPE_NO=#{logTypeNo}
+    </if>
+    <if test="companyNo != null  and companyNo != '' " >
+    and COMPANY_NO=#{companyNo}
+    </if>
+    <if test="startDate != null  and startDate != '' " >
+    and LOG_TIME &gt;= #{startDate}
+    </if>
+    <if test="endDate != null  and endDate != '' " >
+    and LOG_TIME &lt;= #{endDate}
+    </if>
+    <if test="keyWord != null  and keyWord != '' " >
+    and LOG_DESCRIBE like  &apos;%${keyWord}%&apos;
+    </if>
+    order by LOG_TIME desc
+	<if test="pageUtil.paging == true" >
+		limit ${pageUtil.pageOffset},${pageUtil.pageSize} 
+	</if>	    
+</select>
+
+<!-- 删除,实体删除   -->
+<delete id="deleteByEntity" parameterType="com.db.bms.entity.Log">
+    delete from sys_log where 1=1 
+    <if test="operatorNo != null  and operatorNo != '' " >
+    and OPERATOR_NO=#{operatorNo}
+    </if>
+    <if test="logTypeNo != null  and logTypeNo != '' " >
+    and LOG_TYPE_NO=#{logTypeNo}
+    </if>
+    <if test="companyNo != null  and companyNo != '' " >
+    and COMPANY_NO=#{companyNo}
+    </if>
+    <if test="startDate != null  and startDate != '' " >
+    and LOG_TIME &gt;= #{startDate}
+    </if>
+    <if test="endDate != null  and endDate != '' " >
+    and LOG_TIME &lt;= #{endDate}
+    </if>
+    <if test="keyWord != null  and keyWord != '' " >
+    and LOG_DESCRIBE like  &apos;%${keyWord}%&apos;
+    </if>
+</delete>
+
+<!-- 添加,插入记录   -->
+<insert id="insert"  parameterType="com.db.bms.entity.Log" >
+    insert into sys_log(OPERATOR_NO,LOG_TYPE_NO,LOG_DESCRIBE,LOG_TIME,COMPANY_NO) 
+    values(#{operatorNo},#{logTypeNo},#{logDescribe},#{logTime},#{companyNo})
+</insert>
+
+<select id="findLogById"  resultMap="logChild" parameterType="java.lang.Long">
+   select LOG_NO,OPERATOR_NO,LOG_TYPE_NO,LOG_DESCRIBE,LOG_TIME,COMPANY_NO 
+   from sys_log where LOG_NO=#{logNo}
+</select>
+ 
+</mapper>

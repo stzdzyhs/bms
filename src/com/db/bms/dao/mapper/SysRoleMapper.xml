@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.SysRoleMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="role" type="com.db.bms.entity.Role" >
+<result column="ROLE_NO" property="roleNo"/>
+<result column="ROLE_ID" property="roleId"/>
+<result column="ROLE_NAME" property="roleName"/>
+<result column="STATUS" property="status"/>
+<result column="ROLE_DESCRIBE" property="roleDescribe"/>
+<result column="CREATE_BY" property="createBy"/>
+<result column="COMPANY_NO" property="companyNo"/>
+<result column="CREATE_TIME" property="createTime"/>
+</resultMap>
+
+<!--/////////////// 级联递归查询  一对多 ///////////////-->
+<resultMap type="com.db.bms.entity.Role" id="roleChild" extends="role">
+  
+   <!-- 一对一关联   注意 顺序       需要用时开启 -->
+   <!--  
+  <association property="tbcContentModel" column="parentId" select="getParent">
+  		 
+  </association>
+  -->
+  <association property="operator" select="com.db.bms.dao.OperatorMapper.findOperatorById" column="CREATE_BY">
+  </association>
+  
+  <association property="company" select="com.db.bms.dao.CompanyMapper.findCompanyByNo" column="COMPANY_NO">
+  </association>
+  
+ <!-- 一对多关联  -->
+  <collection property="commands" ofType="com.db.bms.entity.Command" select="com.db.bms.dao.CommandMapper.getCommandsByRoleNo" column="ROLE_NO" >
+  </collection>
+  
+</resultMap>
+
+<select id="findRolesByOperatorNo" parameterType="java.lang.Long" resultMap="roleChild">
+   select r.ROLE_NO,r.ROLE_ID,r.ROLE_NAME,r.ROLE_DESCRIBE,r.STATUS,r.CREATE_BY,r.COMPANY_NO,r.CREATE_TIME
+   from sys_role r,sys_operator_role ro where r.ROLE_NO = ro.ROLE_NO and ro.OPERATOR_NO=#{operatorNo} 
+</select>
+
+<!-- 查询,实体查询   -->
+<select id="findAllRoles"  resultMap="role" parameterType="com.db.bms.entity.Role">
+	select ROLE_NO,ROLE_ID,ROLE_NAME,ROLE_DESCRIBE,STATUS,CREATE_BY,COMPANY_NO,CREATE_TIME 
+	from sys_role
+</select>
+
+<select id="findRoleCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Role">
+	select count(1) from sys_role r  
+    where 1=1 
+    <if test="role.roleId != null  and role.roleId != '' " >
+    and r.role_id like  &apos;%${role.roleId}%&apos; 
+    </if>
+    <if test="role.roleName != null  and role.roleName != '' " >
+    and r.role_name like  &apos;%${role.roleName}%&apos; 
+    </if>
+    <if test="role.status != null  and role.status >= 0 " >
+    and r.status=#{role.status}
+    </if>
+    <if test="role.createBy != null and role.createBy > 0">
+    and r.create_by=#{role.createBy}
+    </if>
+    <if test="role.companyNo != null and role.companyNo > 0">
+    and r.company_no=#{role.companyNo}
+    </if>
+</select>
+
+<select id="findRoles" resultMap="roleChild"  parameterType="com.db.bms.entity.Role">
+	select r.role_no,r.role_id,r.role_name,r.role_describe,r.status,r.create_by,r.company_no,r.create_time 
+    from sys_role r where 1=1 
+	<if test="role.roleId != null  and role.roleId != '' " >
+    and r.role_id like  &apos;%${role.roleId}%&apos; 
+    </if>
+    <if test="role.roleName != null  and role.roleName != '' " >
+    and r.role_name like  &apos;%${role.roleName}%&apos; 
+    </if>
+    <if test="role.status != null  and role.status >= 0 " >
+    and r.status=#{role.status}
+    </if>
+    <if test="role.createBy != null and role.createBy > 0">
+    and r.create_by=#{role.createBy}
+    </if>
+    <if test="role.companyNo != null and role.companyNo > 0">
+    and r.company_no=#{role.companyNo}
+    </if>
+	order by r.role_no desc
+	<if test="role.pageUtil.paging == true" >
+		limit ${role.pageUtil.pageOffset},${role.pageUtil.pageSize} 
+	</if>	
+</select>
+
+<select id="findRoleById"  resultMap="roleChild" parameterType="java.lang.Object">
+	select ROLE_NO,ROLE_ID,ROLE_NAME,ROLE_DESCRIBE,STATUS,CREATE_BY,COMPANY_NO,CREATE_TIME 
+	from sys_role 
+	where ROLE_NO=#{roleNo}
+</select>
+
+<select id="findRoleCountByIdOrName" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Role">
+    select count(1) from sys_role where 1=1 
+    <if test="roleNo != null and roleNo > 0" >
+    and ROLE_NO!=#{roleNo}
+   </if>
+    <if test="roleId != null and roleId != '' " >
+    and ROLE_ID=#{roleId}
+   </if>
+   <if test="roleName != null and roleName != '' " >
+    and ROLE_NAME=#{roleName}
+   </if>
+</select>
+
+<!-- 修改,主键更新  -->
+<update id="updateRole" parameterType="com.db.bms.entity.Role" >
+	update sys_role set ROLE_ID=#{roleId},ROLE_NAME=#{roleName},ROLE_DESCRIBE=#{roleDescribe},STATUS=#{status},COMPANY_NO=#{companyNo} where ROLE_NO=#{roleNo}
+</update>
+
+<!-- 添加,插入记录   -->
+<insert id="addRole"  parameterType="com.db.bms.entity.Role" >
+    insert into sys_role(ROLE_NO,ROLE_ID,ROLE_NAME,ROLE_DESCRIBE,STATUS,CREATE_BY,COMPANY_NO,CREATE_TIME) 
+    values(S_ROLE.NEXTVAL,#{roleId},#{roleName},#{roleDescribe},#{status},#{createBy},#{companyNo},#{createTime})
+</insert>
+
+<!-- 查询,SQL -->
+<select id="findRolesById"  resultMap="role" parameterType="java.lang.String">
+    select ROLE_NO,ROLE_ID,ROLE_NAME,ROLE_DESCRIBE,STATUS,CREATE_BY,COMPANY_NO,CREATE_TIME 
+    from sys_role where ROLE_NO in 
+    <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+</select>
+
+<!-- 修改,SQL更新 -->
+<delete id="deleteRoleById" parameterType="java.lang.Long">
+	delete from sys_role where ROLE_NO=#{ROLE_NO,jdbcType=NUMERIC} 
+</delete>
+
+<delete id="deleteCommandByRole" parameterType="java.lang.Long" >
+	delete from sys_role_command where ROLE_NO=#{ROLE_NO} 
+</delete>
+
+<insert id="addRoleCommand" >
+	insert into sys_role_command (COMMAND_NO,ROLE_NO)   values   (#{otherKey},#{mainKey}) 
+</insert>
+
+<select id="getRolesByCompanyNo"  resultType="java.lang.Integer" >
+    select count(1) from sys_role r,
+    (select c1.company_no from bus_company c1,
+    (select c.path from bus_company c where c.company_no in
+    <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    ) c2 
+    where c1.path like c2.path || '%') c3 
+    where r.company_no=c3.company_no
+</select> 
+
+<select id="getRolesByInternetNo"  resultType="java.lang.Integer" >
+    select count(1) from sys_role r,
+    (select c1.internet_no from bus_internet c1,
+    (select c.path from bus_internet c where c.internet_no in
+    <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    ) c2 
+    where c1.path like c2.path || '%') c3 
+    where r.internet_no=c3.internet_no
+</select>
+</mapper>

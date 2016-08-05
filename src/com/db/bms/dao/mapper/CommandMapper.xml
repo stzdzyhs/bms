@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.CommandMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="command" type="com.db.bms.entity.Command" >
+<result column="COMMAND_NO" property="commandNo"/>
+<result column="COMMAND_ID" property="commandId"/>
+<result column="COMMAND_NAME" property="commandName"/>
+<result column="COMMAND_PRIORITY" property="commandPriority"/>
+<result column="MODULE_NAME" property="moduleName"/>
+<result column="COMMAND_DESCRIBE" property="commandDescribe"/>
+<result column="PARENT_ID" property="parentId"/>
+<result column="COMMAND_LEVEL" property="commandLevel"/>
+<result column="STATUS" property="status"/>
+<result column="DISPLAY_POSITION" property="displayPosition"/>
+<result column="IS_MULTI" property="isMulti"/>
+</resultMap>
+
+<!--/////////////// 级联递归查询  一对多 ///////////////-->
+<resultMap type="com.db.bms.entity.Command" id="commandChild" extends="command">
+  
+   <!-- 一对一关联   注意 顺序       需要用时开启 -->
+   <!--  
+  <association property="tbcContentModel" column="parentId" select="getParent">
+  		 
+  </association>
+  -->
+  
+ <!-- 一对多关联  -->
+	<collection property="commands" ofType="com.db.bms.entity.Command" select="getChild" column="COMMAND_NO" >
+	</collection>
+  
+</resultMap>
+
+
+<select id="getCommandsByRoleNo" parameterType="java.lang.Long" resultMap="command">
+	select c.COMMAND_NO,c.COMMAND_ID,c.COMMAND_NAME,c.COMMAND_PRIORITY,c.MODULE_NAME,c.COMMAND_DESCRIBE,
+	        c.PARENT_ID,c.COMMAND_LEVEL,c.STATUS,c.DISPLAY_POSITION,c.IS_MULTI
+		from sys_command c,sys_role_command rc where rc.COMMAND_NO = c.COMMAND_NO and rc.ROLE_NO=#{roleNo} 
+</select>
+
+<select id="getChild" resultMap="commandChild" parameterType="long">
+	SELECT * FROM sys_command 
+    where STATUS!=1 and PARENT_ID=#{commandNo} 
+    order by DISPLAY_POSITION
+</select>
+
+<!-- 查询,排序,分页,模型  -->
+<select id="findAllCommands" resultMap="commandChild"  parameterType="com.db.bms.entity.Command">
+	select COMMAND_NO,COMMAND_ID,COMMAND_NAME,COMMAND_PRIORITY,
+    MODULE_NAME,COMMAND_DESCRIBE,PARENT_ID,COMMAND_LEVEL,STATUS,DISPLAY_POSITION,IS_MULTI 
+    from sys_command 
+    where STATUS!=#{status} 
+    <if test="commandLevel != null and commandLevel != '' " >
+    and COMMAND_LEVEL=#{commandLevel}
+    </if>
+    order by DISPLAY_POSITION desc
+</select>
+
+<!-- 查询,SQL -->
+<select id="findCommandByIds"  resultMap="command" parameterType="java.lang.String">
+	select * 
+    from sys_command 
+    where COMMAND_NO in 
+    <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+    	#{item}
+	</foreach>
+</select>
+
+</mapper>

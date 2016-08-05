@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.FtpServerInfoMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="ftpServerInfo" type="com.db.bms.entity.FtpServerInfo" >
+<id column="id" property="id"/>
+<result column="ip" property="ip"/>
+<result column="port" property="port"/>
+<result column="user_name" property="userName"/>
+<result column="password" property="password"/>
+<result column="operator_no" property="operatorNo"/>
+<result column="company_no" property="companyNo"/>
+<result column="group_id" property="groupId"/>
+<result column="create_time" property="createTime"/>
+<result column="update_time" property="updateTime"/>
+</resultMap>
+
+
+<resultMap type="com.db.bms.entity.FtpServerInfo" id="ftpServerInfoChild" extends="ftpServerInfo">
+  <association property="company" column="COMPANY_NO" select="com.db.bms.dao.CompanyMapper.findCompanyByNo" ></association>
+  <association property="operator" column="OPERATOR_NO" select="com.db.bms.dao.OperatorMapper.findOperatorById" ></association>
+</resultMap>
+
+<select id="findFtpServerById" resultMap="ftpServerInfoChild" parameterType="java.lang.Long">
+  select id,ip,port,user_name,password,operator_no,company_no,group_id,create_time,update_time from opt_ftp_server_info where id=#{ftpServerId}
+</select>
+
+<select id="findFtpServersById" resultMap="ftpServerInfo" parameterType="java.lang.Long">
+   select id,ip,port,user_name,password,operator_no,company_no,group_id,create_time,update_time from opt_ftp_server_info where id in 
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<select id="findFtpServerCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.FtpServerInfo">
+   select count(1) from opt_ftp_server_info f where 1=1 
+   <if test="groupId != null">
+    and (f.group_id=#{groupId} or f.operator_no=#{groupId})
+   </if>
+   <if test="companyNo != null">
+     and f.company_no=#{companyNo}
+   </if>
+   <if test="operatorNo != null">
+     and f.operator_no=#{operatorNo}
+   </if>
+   <if test="ip != null and ip != ''">
+     and f.ip like &apos;%${ip}%&apos;
+   </if>
+</select>
+
+<select id="findFtpServers" resultMap="ftpServerInfoChild"  parameterType="com.db.bms.entity.FtpServerInfo">
+	select f.id,f.ip,f.port,f.user_name,f.password,f.operator_no,f.company_no,f.group_id,f.create_time,f.update_time 
+    from opt_ftp_server_info f where 1=1 
+   	<if test="groupId != null">
+    and (f.group_id=#{groupId} or f.operator_no=#{groupId})
+   	</if>
+   	<if test="companyNo != null">
+    and f.company_no=#{companyNo}
+   	</if>
+   	<if test="operatorNo != null">
+	and f.operator_no=#{operatorNo}
+   	</if>
+   	<if test="ip != null and ip != ''">
+    and f.ip like &apos;%${ip}%&apos;
+   	</if>
+	order by f.id desc
+	<if test="pageUtil.paging == true" >
+		limit ${pageUtil.pageOffset},${pageUtil.pageSize} 
+	</if>
+</select>
+
+<insert id="addFtpServer"  parameterType="com.db.bms.entity.FtpServerInfo" >
+  insert into opt_ftp_server_info(id,ip,port,user_name,password,operator_no,company_no,group_id,create_time)
+  values(s_ftp_server_info.nextval,#{ip},#{port},#{userName},#{password},#{operatorNo},#{companyNo},#{groupId},#{createTime})
+</insert>
+
+<update id="updateFtpServer" parameterType="com.db.bms.entity.FtpServerInfo" >
+  update opt_ftp_server_info set ip=#{ip},port=#{port},user_name=#{userName},
+  password=#{password},update_time=#{updateTime},company_no=#{companyNo} where id=#{id}
+</update>
+
+<delete id="deleteFtpServersById" parameterType="java.lang.Long">
+  delete from opt_ftp_server_info where id in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+</mapper>

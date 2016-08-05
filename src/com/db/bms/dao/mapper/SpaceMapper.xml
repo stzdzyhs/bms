@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.SpaceMapper">  
+ 
+<!-- Result Map 数据库映射到实体类  --> 
+<resultMap id="space" type="com.db.bms.entity.Space" > 
+	<id column="SPACE_NO" property="spaceNo"/>
+	<result column="SPACE_ID" property="spaceId"/>
+	<result column="SPACE_NAME" property="spaceName"/>
+	<result column="SPACE_DESCRIBE" property="spaceDescribe"/> 
+	<result column="CREATE_BY" property="createBy"/> 
+	<result column="CREATE_TIME" property="createTime"/> 
+	<result column="PARENT_ID" property="parentId"/>  
+</resultMap> 
+
+<resultMap id='map2Space' type='com.db.bms.entity.Space' >
+	<id column='space_spaceNo' property='spaceNo'/>
+	<result column='space_spaceId' property='spaceId'/>
+	<result column='space_spaceName' property='spaceName'/>
+	<result column='space_spaceDescribe' property='spaceDescribe'/>
+	<result column='space_createBy' property='createBy'/>
+	<result column='space_createTime' property='createTime'/>
+	<result column='space_parentId' property='parentId'/>
+	<result column='space_path' property='path'/>
+</resultMap>
+<sql id='fields2Space'>
+	space.space_no               space_spaceNo,
+	space.space_id               space_spaceId,
+	space.space_name             space_spaceName,
+	space.space_describe         space_spaceDescribe,
+	space.create_by              space_createBy,
+	space.create_time            space_createTime,
+	space.parent_id              space_parentId,
+	space.path                   space_path,
+	space.company_no             space_companyNo
+</sql>
+
+<!--/////////////// 级联递归查询  一对多 ///////////////-->
+<resultMap type="com.db.bms.entity.Space" id="spaceChild" extends="space">
+  <association property="parent" select="findSpaceByNo" column="PARENT_ID">
+  </association>
+  <association property="operator" select="com.db.bms.dao.OperatorMapper.findOperatorById" column="CREATE_BY">
+  </association>
+  
+  <collection property="cardRegionList" ofType="com.db.bms.entity.CardRegion" select="com.db.bms.dao.CardRegionMapper.getCardRegionBySpaceNo" column="SPACE_NO" >
+  </collection>
+</resultMap>
+ 
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="space.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="space.pageUtil.pageOffset==0">
+		    select * from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	 </trim>
+	</if>
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	 <if test="space.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="space.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${space.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${space.pageUtil.lastRowCount}) where rownum_ &gt;
+			${space.pageUtil.pageOffset}
+		 </otherwise>
+	</choose>
+	 </trim>
+	</if>
+</sql>    
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	SELECT S_COMPANY.NEXTVAL FROM DUAL
+</select> 
+
+<select id="findSpaceByNo" parameterType="java.lang.Long" resultMap="spaceChild">
+	select c.SPACE_NO,c.SPACE_ID,c.SPACE_NAME,c.SPACE_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+	from bus_space c 
+	where c.SPACE_NO=#{spaceNo} 
+</select>
+ 
+ <select id="findSpacesByNo"  resultMap="space" >
+	select SPACE_NO,SPACE_ID,SPACE_NAME,SPACE_DESCRIBE,CREATE_BY,CREATE_TIME,PARENT_ID,PATH
+	from bus_space  where SPACE_NO in 
+	<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+		#{item}
+    </foreach>
+</select> 
+
+<select id="findSpaceByParentId" parameterType="java.lang.Long" resultMap="space">
+	select c.SPACE_NO,c.SPACE_ID,c.SPACE_NAME,c.SPACE_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+	from bus_space c 
+	where c.parent_id=#{parentId} 
+</select> 
+
+<select id="findSpaceById" resultMap="spaceChild" parameterType="java.lang.String">
+ select c.SPACE_NO,c.SPACE_ID,c.SPACE_NAME,c.SPACE_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+ from bus_space c 
+ where c.SPACE_ID=#{spaceId}
+</select>
+ 
+<select id="findSpaceByIds" resultMap="spaceChild" parameterType="java.lang.String">
+ select c.SPACE_NO,c.SPACE_ID,c.SPACE_NAME,c.SPACE_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+ from bus_space c
+ where c.SPACE_ID in
+ 	 <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+</select>  
+
+<!-- 查询,实体查询   -->
+<select id="findAllSpaces"  resultMap="spaceChild" parameterType="com.db.bms.entity.Space">
+	select c.SPACE_NO,c.SPACE_ID,c.SPACE_NAME,c.SPACE_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID 
+	from bus_space c 
+	where 1=1 
+   	<if test="distSpaceList != null  and distSpaceList.size > 0" >
+    	and c.SPACE_NO in
+       	<foreach item="item" index="index" collection="distSpaceList" open="(" separator="," close=")">
+      		#{item}
+    	</foreach>
+   	</if>
+    order by c.SPACE_ID
+</select>
+
+<select id="findSpaceCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Space">
+   select count(1) 
+   from bus_space c 
+   where 1=1 
+   <if test="space.path != null  and space.path != '' " >
+       and c.path like &apos;${space.path}%&apos; 
+       and c.path != #{space.path}
+   </if>
+   <if test="space.spaceName != null  and space.spaceName != '' " >
+       and c.SPACE_NAME like  &apos;%${space.spaceName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if> 
+   <if test="space.spaceId != null  and space.spaceId != '' " >
+       and c.SPACE_ID like  &apos;%${space.spaceId}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="distSpaceList != null  and distSpaceList.size > 0" >
+       and c.SPACE_NO in
+       	 <foreach item="item" index="index" collection="distSpaceList" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+   </if>
+</select>
+
+<select id="findSpaces" resultMap="spaceChild"  parameterType="com.db.bms.entity.Space">
+	select c.SPACE_NO,c.SPACE_ID,c.SPACE_NAME,c.SPACE_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID,c.PATH 
+    from bus_space c
+    where 1=1 
+   <if test="space.path != null  and space.path != '' " >
+       and c.path like &apos;${space.path}%&apos; 
+       and c.path != #{space.path}
+   </if>
+   <if test="space.spaceName != null  and space.spaceName != '' " >
+       and c.SPACE_NAME like  &apos;%${space.spaceName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if> 
+   <if test="space.spaceId != null  and space.spaceId != '' " >
+       and c.SPACE_ID like  &apos;%${space.spaceId}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="distSpaceList != null  and distSpaceList.size > 0" >
+       and c.SPACE_NO in
+       	 <foreach item="item" index="index" collection="distSpaceList" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+   </if>
+	order by c.create_time,c.path
+
+	<if test="space.pageUtil.paging == true" >
+		limit ${space.pageUtil.pageOffset},${space.pageUtil.pageSize} 
+	</if>
+</select>
+
+<select id="getSpaceCountByIdOrName" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Space">
+    select count(1) 
+    from bus_space where 1=1 
+    <if test="spaceNo != null  and spaceNo > 0 " >
+    and SPACE_NO != #{spaceNo} 
+   </if>
+    <if test="spaceId != null  and spaceId != '' " >
+    and SPACE_ID=#{spaceId}
+   </if>
+   <if test="spaceName != null and spaceName != '' " >
+    and SPACE_NAME=#{spaceName}
+   </if>
+</select>
+
+<insert id="addSpace"  parameterType="com.db.bms.entity.Space" >
+    insert into BUS_SPACE(SPACE_NO,SPACE_ID,SPACE_NAME,SPACE_DESCRIBE,CREATE_BY,CREATE_TIME,PARENT_ID,PATH) 
+    values(#{spaceNo},#{spaceId},#{spaceName},#{spaceDescribe},#{createBy},#{createTime},#{parentId,jdbcType=VARCHAR},#{path})
+</insert>
+
+<update id="updateSpace" parameterType="com.db.bms.entity.Space" >
+	update BUS_SPACE set SPACE_ID=#{spaceId,jdbcType=VARCHAR},SPACE_NAME=#{spaceName,jdbcType=VARCHAR},SPACE_DESCRIBE=#{spaceDescribe,jdbcType=VARCHAR},PARENT_ID=#{parentId,jdbcType=VARCHAR},PATH=#{path,jdbcType=VARCHAR} where SPACE_NO=#{spaceNo}
+</update>
+
+<select id="findSpacesWithSubByNo"  resultMap="space" >
+    select c.SPACE_NO,c.SPACE_ID,c.SPACE_NAME,c.SPACE_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID,c.PATH 
+    from BUS_SPACE c,
+    (select SPACE_NO,PATH from BUS_SPACE where SPACE_NO in 
+   <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    ) c1 
+    where c.SPACE_NO=c.SPACE_NO and c.PATH like c1.path || '%'
+</select>
+
+<delete id="deleteSpace" parameterType="com.db.bms.entity.Space">
+    delete from BUS_SPACE where 1=1
+    <if test="spaceNo != null  and spaceNo > 0 " >
+    and SPACE_NO = #{spaceNo} 
+    </if>
+</delete> 
+ 
+<delete id="deleteSpaceCardRegionMapBySpaceNo">
+  delete from BUS_SPACE_CARD_REGION_MAP where SPACE_NO=#{spaceNo}
+</delete>
+ 
+<delete id="deleteSpaceCardRegionMaps">
+delete from BUS_SPACE_CARD_REGION_MAP where SPACE_NO=#{spaceNo} and region_id in
+   <foreach item="item" index="index" collection="regionIds" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+ 
+<insert id="addSpaceCardRegionMap">
+ insert into BUS_SPACE_CARD_REGION_MAP(space_no,region_id) values(#{spaceNo},#{regionId})
+</insert>
+
+<select id="hasWritePermission" resultType="java.lang.Integer">
+	<choose>
+	<when test="curOper.type==null">
+		select 1 from dual
+	</when>
+	<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+		select 0 from dual
+	</when>
+	<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+		select count(1) from (
+			select operator.company_no from bus_space space
+			left join sys_operator operator on space.create_by=operator.operator_no
+			where space.space_no in 
+			<foreach item="item" index="index" collection="spaceList" open="(" separator="," close=")">
+   				#{item.spaceNo}
+			</foreach>
+			group by operator.company_no
+			
+			minus 
+			
+			select company_no
+			from bus_company company 
+			start with company.company_no= (select company_no from sys_operator where operator_no=${curOper.operatorNo}) 
+			connect by prior company.company_no = company.parent_id
+		)
+	</when>
+	<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+		select count(1) from bus_space where create_by &lt;&gt; #{curOper.operatorNo} and space_no in
+		<foreach item="item" index="index" collection="spaceList" open="(" separator="," close=")">
+   			#{item}
+		</foreach>
+	</when>
+	<otherwise>
+		select 1 from dual
+	</otherwise>
+</choose>
+</select>
+
+<select id="findSpaceCardRegionMapCountByRegionId" resultType="java.lang.Integer">
+   select count(1) from BUS_SPACE_CARD_REGION_MAP where region_id in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+ 
+<select id="findSpaceCountById" resultType="java.lang.Integer">
+   select count(1) from BUS_SPACE c where c.SPACE_ID in
+   <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+ 
+<select id="findDistSpaceByOperNo" resultMap="space"  parameterType="java.lang.Long">
+ select c.SPACE_NO,c.SPACE_ID,c.SPACE_NAME,c.SPACE_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID,c.PATH 
+ from BUS_SPACE c,sys_operator_Space o
+ where c.SPACE_NO=o.SPACE_NO and o.operator_no=#{operatorNo}
+</select>
+ 
+<!-- ///////////////////////////////////////////////////////////// -->
+ 
+<sql id="fliterSearch">
+<!--    <if test="path != null  and path != '' " > -->
+<!--        and path like &apos;${path}%&apos;  -->
+<!--        and path != #{path} -->
+<!--    </if> -->
+   <if test="spaceId!= null  and spaceId != '' " >
+       and space_id like  &apos;%${spaceId}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="spaceName != null  and spaceName != '' " >
+       and space_name like  &apos;%${spaceName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+</sql>
+ 
+<sql id="filterByOperatorForRead" >
+	<choose>
+		<when test="curOper.type==null">
+			and 1=0
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin, empty -->
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_SPACE_ADMIN">
+			and (bus_space.space_no = #{curOper.spaceNo}) 
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			and (bus_space.space_no = #{curOper.spaceNo}) 
+		</when>
+		<otherwise>
+			and (1=0)
+		</otherwise>
+	</choose>
+</sql>	
+
+<!-- 查找operator关联space, 不包括子space -->
+<select id="findOperatorSpaces" resultMap="space"  parameterType="com.db.bms.entity.Space">
+	<include refid="pagePrefix"/>
+	
+   	select * from bus_space space where 1=1
+   	<include refid="filterByOperatorForRead"/>
+	<include refid="fliterSearch"/>
+	
+	<include refid="pageSuffix"/>
+</select>
+<select id="findOperatorSpacesCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Space">
+   	select count(*) from bus_space where 1=1
+   	<include refid="filterByOperatorForRead"/>
+	<include refid="fliterSearch"/>
+</select>
+<!-- ////////////////////////////////////////////////////////////////////////////// -->
+
+<!-- 空分组策略 -->
+<!-- <select id="findSpaceWithStrategy" resultMap="map2TopicExt"  parameterType="com.db.bms.entity.Space">
+	<include refid="pagePrefix"></include>
+
+	select <include refid="fields2Space"/>,
+	<include refid="com.db.bms.dao.StrategyMapper.fields2Strategy"/>
+	from bus_space space
+	left join (
+		select *
+		from bus_res_strategy_map rsm 
+		where rsm.type=${@com.db.bms.entity.StrategyCondition@TYPE_SPACE} 
+	) rsm on space.space_id=rsm.res_id
+	left join bus_strategy strategy on rsm.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="space.space_id != null">
+    	and space.space_id=#{space.space_id}
+   	</if>
+   	<if test="space.companyNo != null">
+	and space.company_no=#{space.companyNo}
+   	</if>
+   	<if test="space.spaceName != null and space.spaceName != ''">
+    	and space.space_name like &apos;%${spaceName}%&apos; escape '_'
+   	</if>
+	order by space.space_id desc
+	<include refid="pageSuffix"></include>	
+</select>
+
+<select id="findSpaceWithStrategyCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Space">
+	select count(1)
+	from bus_space space
+	left join (
+		select *
+		from bus_res_strategy_map rsm 
+		where rsm.type=${@com.db.bms.entity.StrategyCondition@TYPE_SPACE} 
+	) rsm on space.space_id=rsm.res_id
+	left join bus_strategy strategy on rsm.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="space.space_id != null">
+    	and space.space_id=#{space.space_id}
+   	</if>
+   	<if test="space.spaceName != null and space.spaceName != ''">
+    	and space.space_name like &apos;%${spaceName}%&apos; escape '_'
+   	</if>
+   	<if test="space.companyNo != null">
+	and space.company_no=#{space.companyNo}
+   	</if>
+</select> -->
+
+
+<select id="findStrategySpaceNoSelectCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Space">
+select count(1) 
+from bus_space space
+where 1=1
+<!-- can select all card region 
+<if test="strategyNo!=null" >
+	and space.company_no=(select bus_strategy.company_no from bus_strategy where bus_strategy.strategy_no=#{strategyNo})
+</if>
+<if test="strategyNo==null" > 
+	and space.company_no=#{companyNo}
+</if> 
+-->
+<if test="space.spaceName != null  and space.spaceName != '' " >
+	and space.SPACE_NAME like  &apos;%${space.spaceName}%&apos; 
+</if>
+<if test="excludeIds != null" >
+	and space.space_no not in 
+    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+   		#{item}
+	</foreach>
+</if>
+</select>
+
+<select id="findStrategySpaceNoSelect" resultMap="map2Space"  parameterType="com.db.bms.entity.Space">
+	<include refid="pagePrefix"></include>
+select <include refid="fields2Space"/> 
+from bus_space space
+where 1=1
+<!--  can select all
+<if test="strategyNo!=null" >
+	and space.company_no=(select bus_strategy.company_no from bus_strategy where bus_strategy.strategy_no=#{strategyNo})
+ -->	
+<!-- this should NOT check	
+	and space.space_no not in ( select sc.condition_id from bus_strategy_condition sc where sc.strategy_no=#{strategyNo} 
+		and sc.condition_type= ${@com.db.bms.entity.StrategyCondition@TYPE_SPACE} )
+-->
+<!--  can select all
+</if>
+<if test="strategyNo==null" >
+	and space.company_no=#{companyNo}
+</if>
+-->		 
+<if test="space.spaceName != null  and space.spaceName != '' " >
+	and space.SPACE_NAME like  &apos;%${space.spaceName}%&apos; 
+</if>
+<if test="excludeIds != null" >
+	and space.space_no not in 
+    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+   		#{item}
+	</foreach>
+</if>
+order by space.create_time desc, space.space_no desc
+
+	<include refid="pageSuffix"></include>       
+</select>
+
+</mapper>

@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.PictureMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="picture" type="com.db.bms.entity.Picture" >
+<id column="id" property="id"/>
+<result column="show_order" property="showOrder"/>
+<result column="pic_name" property="picName"/>
+<result column="pic_path" property="picPath"/>
+<result column="check_code" property="checkCode"/>
+<result column="status" property="status"/>
+<result column="pic_label" property="picLabel"/>
+<result column="pic_desc" property="picDesc"/>
+<result column="pic_author" property="picAuthor"/>
+<result column="pic_source" property="picSource"/>
+<result column="vote_flag" property="voteFlag"/>
+<result column="video_time" property="videoTime"/>
+<result column="frame_num" property="frameNum"/>
+<result column="album_no" property="albumNo"/>
+<result column="article_no" property="articleNo"/>
+<result column="operator_no" property="operatorNo"/>
+<result column="company_no" property="companyNo"/>
+<result column="create_time" property="createTime"/>
+<result column="update_time" property="updateTime"/>
+<result column="is_self" property="isSelf"/>
+<result column="res_no" property="resNo"/>
+<result column="PICTURE_ID" property="pictureId" />
+</resultMap>
+
+<resultMap id='map2Picture' type='com.db.bms.entity.Picture' >
+	<id column='picture_id' property='id'/>
+	<result column='picture_pictureId' property='pictureId'/>
+	<result column='picture_showOrder' property='showOrder'/>
+	<result column='picture_picName' property='picName'/>
+	<result column='picture_picPath' property='picPath'/>
+	<result column='picture_checkCode' property='checkCode'/>
+	<result column='picture_status' property='status'/>
+	<result column='picture_picLabel' property='picLabel'/>
+	<result column='picture_picDesc' property='picDesc'/>
+	<result column='picture_picAuthor' property='picAuthor'/>
+	<result column='picture_picSource' property='picSource'/>
+	<result column='picture_voteFlag' property='voteFlag'/>
+	<result column='picture_videoTime' property='videoTime'/>
+	<result column='picture_frameNum' property='frameNum'/>
+	<result column='picture_albumNo' property='albumNo'/>
+	<result column='picture_articleNo' property='articleNo'/>
+	<result column='picture_resNo' property='resNo'/>
+	<result column='picture_operatorNo' property='operatorNo'/>
+	<result column='picture_companyNo' property='companyNo'/>
+	<result column='picture_createTime' property='createTime'/>
+	<result column='picture_updateTime' property='updateTime'/>
+</resultMap>
+
+<resultMap id='map2PictureExt' type='com.db.bms.entity.Picture' extends="map2Picture">
+	<association property="operator" resultMap="com.db.bms.dao.OperatorMapper.map2Operator"/>
+	<association property="company" resultMap="com.db.bms.dao.CompanyMapper.map2Company"/>
+</resultMap>
+
+<sql id='fields2Picture'>
+	picture.id                   picture_id,
+	picture.picture_id           picture_pictureId,
+	picture.show_order           picture_showOrder,
+	picture.pic_name             picture_picName,
+	picture.pic_path             picture_picPath,
+	picture.check_code           picture_checkCode,
+	picture.status               picture_status,
+	picture.pic_label            picture_picLabel,
+	picture.pic_desc             picture_picDesc,
+	picture.pic_author           picture_picAuthor,
+	picture.pic_source           picture_picSource,
+	picture.vote_flag            picture_voteFlag,
+	picture.video_time           picture_videoTime,
+	picture.frame_num            picture_frameNum,
+	picture.album_no             picture_albumNo,
+	picture.article_no           picture_articleNo,
+	picture.res_no               picture_resNo,
+	picture.operator_no          picture_operatorNo,
+	picture.company_no           picture_companyNo,
+	picture.create_time          picture_createTime,
+	picture.update_time          picture_updateTime
+</sql>
+
+<resultMap type="com.db.bms.entity.Picture" id="pictureChild" extends="picture">
+  <association property="company" column="company_no" select="com.db.bms.dao.CompanyMapper.findCompanyByNo" ></association>
+  <association property="operator" column="operator_no" select="com.db.bms.dao.OperatorMapper.findOperatorById" ></association>
+</resultMap>
+
+<sql id="filterByOperatorForWrite"> <!-- write: update/delete -->
+	<choose>
+		<when test="picture.curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin, empty -->
+		</when>
+		<when test="picture.curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+			and (company_no = #{picture.curOper.companyNo}) 
+		</when>
+		<when test="picture.curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			and (operator_no = #{picture.curOper.operatorNo}) 
+		</when>
+		<otherwise>
+		</otherwise>
+	</choose>
+</sql>
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	select s_picture.nextval from dual
+</select>
+
+<sql id="fieldsPicture">
+	id,show_order,pic_name,pic_path,check_code,status,pic_label,pic_desc,pic_author,
+	pic_source,vote_flag,video_time,frame_num,album_no,article_no, operator_no,company_no,
+	create_time, update_time, res_no,PICTURE_ID
+</sql>
+
+<select id="findPictureById" resultMap="pictureChild" parameterType="java.lang.Long">
+  select <include refid="fieldsPicture"/> from bus_picture p where p.id=#{pictureId}
+</select>
+
+<select id="findPicturesById" resultMap="picture" parameterType="java.lang.Long">
+  select id,show_order,pic_name,pic_path,check_code,status,pic_label,pic_desc,pic_author,pic_source,vote_flag,video_time,frame_num,album_no,operator_no,company_no
+  ,create_time,update_time, res_no, article_no from bus_picture p where p.id in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<select id="findPictureCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Picture">
+   select count(1) from bus_picture p where 1=1 
+   <if test="albumNo != null">
+     and p.album_no=#{albumNo}
+   </if>
+   <if test="operatorNo != null">
+     and p.operator_no=#{operatorNo}
+   </if>
+   <if test="picName != null and picName != ''">
+     and p.pic_name like &apos;%${picName}%&apos; 
+   </if>
+   <if test="status != null">
+     and p.status=#{status}
+   </if>
+</select>
+
+<!-- 查找最小res_no的图片 -->
+<select id="findArticleFirstPicture" resultMap="picture"  parameterType="java.lang.Long">
+	select * from (select * from bus_picture where article_no=#{articleNo} order by res_no  ) where rownum &lt; 2
+</select>
+
+
+<!--  is res no.unique for article -->
+<select id="isResNoUnique" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Picture">
+	select count(*) from bus_picture where article_no=(select article_no from bus_picture where id=#{picture.id}) 
+    <if test="picture.id != null and picture.id > 0" >
+    and id != #{picture.id}
+   	</if>
+    <if test="picture.resNo != null  and picture.resNo != '' " >
+    and res_no=#{picture.resNo}
+   	</if>
+</select>
+
+<select id="findPictures" resultMap="pictureChild"  parameterType="com.db.bms.entity.Picture">
+<if test="pageUtil.paging == true" >
+	    <choose>
+		  <when test="pageUtil.pageOffset==0">
+		      select *  from (
+		  </when>
+		  <otherwise>
+		      select * from (select row_.*, rownum rownum_ from (
+		  </otherwise>
+	    </choose>
+	</if>
+    select p.id,p.show_order,p.pic_name,p.pic_path,check_code,p.status,p.pic_label,p.pic_desc,p.pic_author,p.pic_source,p.vote_flag,p.video_time,p.frame_num,p.album_no,
+    p.operator_no,p.company_no,p.create_time,p.update_time, res_no ,PICTURE_ID
+    from bus_picture p where 1=1 
+   <if test="albumNo != null">
+     and p.album_no=#{albumNo}
+   </if>
+   <if test="operatorNo != null">
+     and p.operator_no=#{operatorNo}
+   </if>
+   <if test="picName != null and picName != ''">
+     and p.pic_name like &apos;%${picName}%&apos; 
+   </if>
+   <if test="status != null">
+     and p.status=#{status}
+   </if>
+
+   <if test="sortKey == 'createTime'">
+        order by p.show_order,p.create_time ${sortType}
+   </if>
+   <if test="sortKey == 'picNameKey'">
+        order by p.show_order,p.pic_name ${sortType}
+   </if>
+   <if test="sortKey == 'frameNum'">
+        order by p.frame_num ${sortType}
+   </if>
+     <if test="pageUtil.paging == true" >
+      <choose>
+		<when test="pageUtil.pageOffset==0">
+			)where rownum &lt;= ${pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${pageUtil.lastRowCount}) where rownum_ &gt;
+			${pageUtil.pageOffset}
+		 </otherwise>
+	  </choose>
+	  </if>
+</select>
+<select id="findAlbumCanPublishPicture" resultMap="map2Picture"  parameterType="com.db.bms.entity.Picture">
+	select <include refid="fields2Picture"/>
+	from bus_picture picture
+	where album_no=#{picture.albumNo}
+	<!-- 包括状态publish，防止publish和状态不一致 -->
+	and (status=${@com.db.bms.entity.AuditStatus@PUBLISH} or status=${@com.db.bms.entity.AuditStatus@AUDIT_PASS})
+	and picture.id not in (  
+		select m.resource_id
+		from bus_resource_publish_map m
+		where m.parent_type=${@com.db.bms.entity.EntityType@TYPE_ALBUM} and 
+		     m.type=${@com.db.bms.entity.EntityType@TYPE_PICTURE}
+		and m.parent_id=#{picture.albumNo})
+</select>
+
+<insert id="addPicture"  parameterType="com.db.bms.entity.Picture" >
+  insert into bus_picture(id,show_order,pic_name,pic_path,res_no,check_code,status,pic_label,pic_desc,
+  pic_author,pic_source,vote_flag,video_time,frame_num,
+  album_no, article_no, operator_no,company_no, create_time,PICTURE_ID) values(
+  	#{id,jdbcType=NUMERIC},#{showOrder,jdbcType=NUMERIC},#{picName,jdbcType=VARCHAR},#{picPath,jdbcType=VARCHAR}, #{resNo,jdbcType=NUMERIC},
+  	#{checkCode,jdbcType=VARCHAR},#{status,jdbcType=NUMERIC},
+  	#{picLabel,jdbcType=VARCHAR},#{picDesc,jdbcType=VARCHAR},  #{picAuthor,jdbcType=VARCHAR},
+  	#{picSource,jdbcType=VARCHAR},#{voteFlag,jdbcType=NUMERIC},#{videoTime,jdbcType=VARCHAR},#{frameNum,jdbcType=NUMERIC},
+  	#{albumNo,jdbcType=NUMERIC},#{articleNo,jdbcType=NUMERIC},  	
+  	#{operatorNo,jdbcType=NUMERIC},
+  	#{companyNo,jdbcType=NUMERIC},#{createTime,jdbcType=VARCHAR},#{pictureId,jdbcType=VARCHAR})
+</insert>
+
+<update id="updatePicture" parameterType="com.db.bms.entity.Picture" >
+  update bus_picture set show_order=#{showOrder,jdbcType=NUMERIC},pic_name=#{picName,jdbcType=VARCHAR},pic_path=#{picPath,jdbcType=VARCHAR},check_code=#{checkCode,jdbcType=VARCHAR},status=#{status,jdbcType=NUMERIC},pic_label=#{picLabel,jdbcType=VARCHAR}
+  ,pic_desc=#{picDesc,jdbcType=VARCHAR},pic_author=#{picAuthor,jdbcType=VARCHAR},pic_source=#{picSource,jdbcType=VARCHAR},
+  vote_flag=#{voteFlag},video_time=#{videoTime,jdbcType=VARCHAR},frame_num=#{frameNum,jdbcType=NUMERIC},album_no=#{albumNo},update_time=#{updateTime} where id=#{id}
+</update>
+
+<!-- update picture basic info(picName, picLabe, picDesc, picAuthor, picSource, voteFlag) -->
+<update id="updatePictureBasicInfo" parameterType="com.db.bms.entity.Picture" >
+update bus_picture set pic_name=#{picture.picName},  pic_label=#{picture.picLabel,jdbcType=VARCHAR},
+ 	pic_desc=#{picture.picDesc,jdbcType=VARCHAR},pic_author=#{picture.picAuthor,jdbcType=VARCHAR},
+  	pic_source=#{picture.picSource,jdbcType=VARCHAR},  vote_flag=#{picture.voteFlag},
+  	res_no=#{picture.resNo,jdbcType=NUMERIC}, update_time=#{picture.updateTime,jdbcType=VARCHAR}
+where id=#{picture.id}
+<include refid="filterByOperatorForWrite"/>
+</update>
+
+<update id="updatePictureStatus">
+ 	update bus_picture set status=#{status},update_time=#{updateTime} where id in
+	<foreach item="item" index="index" collection="pictureIds" open="(" separator="," close=")">
+      	#{item}
+ 	</foreach>
+</update>
+
+<delete id="deletePicturesById" parameterType="java.lang.Long">
+ delete from bus_picture p where p.id in 
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+<delete id="deletePicturesByAlbumNo" parameterType="java.lang.Long">
+ delete from bus_picture p where p.album_no in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</delete>
+
+<update id="updatePictureStatusByAlbumId">
+ update bus_picture set status=#{publishStatus},update_time=#{updateTime} where album_no=#{albumNo} and status=#{auditPassStatus}
+</update>
+</mapper>

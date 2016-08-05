@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.db.bms.dao.FeatureCodeGroupMapper">
+	
+<!-- table/param FeatureCodeGroup alias: fcg -->
+	
+<resultMap id="map2FeatureCodeGroup" type="com.db.bms.entity.FeatureCodeGroup" >
+	<id column='fcg_groupNo' property='groupNo'/>
+	<result column='fcg_groupName' property='groupName'/>
+	<result column='fcg_operatorNo' property='operatorNo'/>
+	<result column='fcg_createTime' property='createTime'/>
+	<result column='fcg_groupId' property='groupId'/>
+	<result column='fcg_updateTime' property='updateTime'/>
+	<result column='fcg_gid' property='gid'/>
+</resultMap>
+
+<resultMap id="map2FeatureCodeGroupExt" type="com.db.bms.entity.FeatureCodeGroup" extends="map2FeatureCodeGroup">
+    <association property="operator" resultMap="com.db.bms.dao.OperatorMapper.map2Operator"/>
+	
+	<!-- this should be collection !!! 		
+	<association property="featureCode" javaType="com.db.bms.entity.FeatureCode">
+		<id		column="FEATURECODE_feature_code_no" 	property="featureCodeNo"/>
+		<result column="FEATURECODE_feature_code_id" 	property="featureCodeId"/>
+		<result column="FEATURECODE_feature_code_val" 	property="featureCodeVal"/>
+		<result column="FEATURECODE_feature_code_type"  property="featureCodeType"/>
+	    <result column="FEATURECODE_feature_code_desc"  property="featureCodeDesc" />
+	    <result column="FEATURECODE_create_time" 		property="createTime" />
+	    <result column="FEATURECODE_operator_no" 		property="operatorNo" />
+	    <result column="FEATURECODE_update_time" 		property="updateTime" />
+	    <result column="FEATURECODE_group_id" 			property="groupId" />
+	    <result column="FEATURECODE_status" 			property="status" />
+	</association>
+	-->
+</resultMap>
+
+<!-- table fileds -->
+<sql id="fields2FeatureCodeGroup">
+	fcg.group_no    fcg_groupNo,
+	fcg.group_name  fcg_groupName,
+	fcg.operator_no fcg_operatorNo,
+	fcg.create_time fcg_createTime,
+	fcg.group_id    fcg_groupId,
+	fcg.update_time fcg_updateTime,
+	fcg.gid         fcg_gid
+</sql>
+
+<!-- 
+<resultMap id='map2FeatureCodeGroup' type='com.db.bms.entity.FeatureCodeGroup' >
+</resultMap>
+
+<sql id='fields2FeatureCodeGroup'>
+	fcg.group_no    fcg_groupNo,
+	fcg.group_name  fcg_groupName,
+	fcg.operator_no fcg_operatorNo,
+	fcg.create_time fcg_createTime,
+	fcg.group_id    fcg_groupId,
+	fcg.update_time fcg_updateTime,
+	fcg.gid         fcg_gid
+</sql>
+-->
+
+
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="fcg.pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="fcg.pageUtil.pageOffset==0">
+		         select *  from (
+		      </when>
+		      <otherwise>
+		     	 select * from (select row_.*, rownum rownum_ from (
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="fcg.pageUtil.paging == true" >
+		<trim prefix="">
+		    <choose>
+		      <when test="fcg.pageUtil.pageOffset==0">
+		         )where rownum &lt;= ${fcg.pageUtil.lastRowCount}
+		      </when>
+		      <otherwise>
+		     	 ) row_ where rownum &lt;= ${fcg.pageUtil.lastRowCount}) where rownum_ &gt; ${fcg.pageUtil.pageOffset}
+		      </otherwise>
+	  	   </choose>
+		</trim>
+	</if>
+</sql>
+<!-- //////////////////////////////////////////// -->
+
+<sql id="filterSearch">
+	<if test="fcg.groupId != null and fcg.groupId != ''">
+		and bus_feature_code_group.group_id like &apos;%${fcg.groupId}%&apos;
+	</if>
+	<if test="fcg.groupName != null and fcg.groupName != ''">
+		and bus_feature_code_group.group_name like &apos;%${fcg.groupName}%&apos;
+	</if>
+	
+	<!-- 权限管理 -->
+	<if test="fcg.groupId != null">
+   		and (bus_feature_code_group.group_id=#{fcg.groupId} 
+   				or bus_feature_code_group.operator_no=#{fcg.groupId})
+    </if>
+	
+	<if test="fcg.allocResourceIds != null and fcg.allocResourceIds.size > 0">
+	    <if test="fcg.operatorNo != null">
+			and (bus_feature_code_group.operator_no=#{fcg.operatorNo} 
+				or bus_feature_code_group.group_no in
+			<foreach item="item" index="index" collection="fcg.allocResourceIds" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+			) 
+	   </if>
+   </if>
+	<if test="fcg.allocResourceIds == null or fcg.allocResourceIds.size &lt;= 0">
+		<if test="fcg.operatorNo != null">
+		 	and bus_feature_code_group.operator_no=#{fcg.operatorNo}
+		</if>
+	</if>	
+	
+	
+</sql>
+
+<select id="getFeatureCodeGroupsCount" resultType="java.lang.Integer" parameterType="com.db.bms.entity.FeatureCodeGroup">
+	select count(*) from bus_feature_code_group fcg
+	left join sys_operator operator on operator.operator_no = fcg.operator_no
+	where 1=1
+	<include refid="filterSearch" />
+</select>
+
+<select id="getFeatureCodeGroups" resultMap="map2FeatureCodeGroupExt" parameterType="com.db.bms.entity.FeatureCodeGroup">
+	<include refid="pagePrefix"/>
+		select <include refid="fields2FeatureCodeGroup"/>,<include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/> 
+		from bus_feature_code_group fcg
+		left join sys_operator operator on operator.operator_no = fcg.operator_no
+		where 1=1
+		<include refid="filterSearch" />
+		order by fcg.update_time desc, fcg.group_no desc
+	<include refid="pageSuffix"/>
+</select>
+
+<select id="getFeaGroupByNo" parameterType="java.lang.Long" resultMap="map2FeatureCodeGroup">
+	select <include refid="fields2FeatureCodeGroup"/> 
+	from bus_feature_code_group fcg
+	where fcg.group_no = #{groupNo}
+</select>
+
+<select id="getFeaGroupDetail" parameterType="java.lang.Long" resultMap="map2FeatureCodeGroupExt">
+	select <include refid="fields2FeatureCodeGroup"/> ,<include refid="com.db.bms.dao.OperatorMapper.fields2Operator"/> 
+	from bus_feature_code_group fcg
+	left join sys_operator operator on operator.operator_no = fcg.operator_no
+	where fcg.group_no = #{groupNo}
+</select>
+
+<select id="checkGroupName" parameterType="com.db.bms.entity.FeatureCodeGroup" resultType="java.lang.Integer">
+	select count(0) from bus_feature_code_group fcg where 1=1
+	<if test="fcg.groupName != null and fcg.groupName != ''">
+	and fcg.group_name = #{fcg.groupName}
+	</if>
+</select>
+
+<select id="checkGroupId" parameterType="com.db.bms.entity.FeatureCodeGroup" resultType="java.lang.Integer">
+	select count(0) from bus_feature_code_group fcg 
+	where 1=1
+	<if test="fcg.groupId != null and fcg.groupId != ''">
+	and fcg.group_id = #{fcg.groupId}
+	</if>
+</select>
+
+<update id="updateGroup" parameterType="com.db.bms.entity.FeatureCodeGroup">
+	update bus_feature_code_group fcg set 
+		fcg.group_name =#{fcg.groupName},
+		fcg.update_time = #{fcg.updateTime}
+	where fcg.group_no = #{fcg.groupNo} 		
+</update>
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	SELECT S_COMMON.NEXTVAL FROM DUAL
+</select>
+
+<insert id="addGroup" parameterType="com.db.bms.entity.FeatureCodeGroup">
+	insert into bus_feature_code_group fcg (
+		group_no,group_id,group_name,operator_no,create_time,update_time)
+	values (
+		#{fcg.groupNo, jdbcType=NUMERIC},  <!--  S_FEATURECODE_GROUP.nextval, need to return PK... -->
+		#{fcg.groupId, jdbcType=VARCHAR},
+		#{fcg.groupName, jdbcType=VARCHAR},
+		#{fcg.operatorNo, jdbcType=NUMERIC},
+		#{fcg.createTime, jdbcType=VARCHAR},
+		#{fcg.updateTime, jdbcType=VARCHAR}
+	)
+</insert>
+
+<select id="getGroups" resultMap="map2FeatureCodeGroupExt" parameterType="java.lang.Long">
+	select <include refid="fields2FeatureCodeGroup" /> 
+	from bus_feature_code_group fcg where group_no in 
+	 <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+	      #{item}
+	 </foreach>
+</select>
+
+<delete id="deleteGroups" parameterType="java.lang.Long">
+	delete from bus_feature_code_group 
+	where group_no in 
+	<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+	      #{item}
+	 </foreach>
+</delete>
+
+</mapper>

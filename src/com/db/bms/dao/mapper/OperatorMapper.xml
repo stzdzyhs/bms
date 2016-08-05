@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.OperatorMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="tableMapToModel" type="com.db.bms.entity.Operator" >
+	<id column="OPERATOR_NO" property="operatorNo"/>
+	<result column="OPERATOR_ID" property="operatorId"/>
+	<result column="OPERATOR_NAME" property="operatorName"/>
+	<result column="OPERATOR_PWD" property="operatorPwd"/>
+	<result column="TYPE" property="type"/>
+	<result column="STATUS" property="status"/>
+	<result column="OPERATOR_EMAIL" property="operatorEmail"/>
+	<result column="OPERATOR_TEL" property="operatorTel"/>
+	<result column="OPERATOR_DESCRIBE" property="operatorDescribe"/>
+	<result column="total_size" property="totalSize"/>
+	<result column="used_size" property="usedSize"/>
+	<result column="COMPANY_NO" property="companyNo"/>
+	<result column="CREATE_BY" property="createBy"/>
+	<result column="CREATE_TIME" property="createTime"/>
+</resultMap>
+
+
+<!--/////////////// 级联递归查询  一对多 ///////////////-->
+<resultMap type="com.db.bms.entity.Operator" id="tableMapToModelChild" extends="tableMapToModel">
+  
+   <!-- 一对一关联   注意 顺序       需要用时开启 -->
+   <!--  
+  <association property="tbcContentModel" column="parentId" select="getParent">
+  		 
+  </association>
+  -->
+  
+  <association property="company" column="COMPANY_NO" select="com.db.bms.dao.CompanyMapper.findCompanyByNo" ></association>
+  
+  <association property="operator" column="CREATE_BY" select="findOperatorById" ></association>
+  
+  <association property="resAloc" javaType="com.db.bms.entity.ResourceAllocation">
+  	<id column="id" property="id"/>
+	<result column="cmd_str" property="cmdStr"/>
+  </association>
+  
+<!-- 一对多关联  -->
+  <collection property="roles" ofType="com.db.bms.entity.Role" select="com.db.bms.dao.SysRoleMapper.findRolesByOperatorNo" column="OPERATOR_NO" >
+  </collection>
+<!--   <collection property="company" ofType="com.db.bms.entity.Company" select="com.db.bms.dao.CompanyMapper.getCompanysByCompanyNo" column="OPERATOR_NO" >
+  </collection> -->
+  
+  <collection property="companys" ofType="com.db.bms.entity.Company" select="com.db.bms.dao.CompanyMapper.findDistCompanyByOperNo" column="OPERATOR_NO" >
+  </collection>
+  
+</resultMap>
+
+<resultMap id='map2Operator' type='com.db.bms.entity.Operator' >
+	<id column='operator_operatorNo' property='operatorNo'/>
+	<result column='operator_operatorId' property='operatorId'/>
+	<result column='operator_operatorName' property='operatorName'/>
+	<result column='operator_operatorPwd' property='operatorPwd'/>
+	<result column='operator_type' property='type'/>
+	<result column='operator_status' property='status'/>
+	<result column='operator_operatorEmail' property='operatorEmail'/>
+	<result column='operator_operatorTel' property='operatorTel'/>
+	<result column='operator_operatorDescribe' property='operatorDescribe'/>
+	<result column='operator_totalSize' property='totalSize'/>
+	<result column='operator_usedSize' property='usedSize'/>
+	<result column='operator_companyNo' property='companyNo'/>
+	<result column='operator_createBy' property='createBy'/>
+	<result column='operator_createTime' property='createTime'/>
+</resultMap>
+
+<sql id='fields2Operator'>
+	operator.operator_no         operator_operatorNo,
+	operator.operator_id         operator_operatorId,
+	operator.operator_name       operator_operatorName,
+	operator.operator_pwd        operator_operatorPwd,
+	operator.type                operator_type,
+	operator.status              operator_status,
+	operator.operator_email      operator_operatorEmail,
+	operator.operator_tel        operator_operatorTel,
+	operator.operator_describe   operator_operatorDescribe,
+	operator.total_size          operator_totalSize,
+	operator.used_size           operator_usedSize,
+	operator.company_no          operator_companyNo,
+	operator.create_by           operator_createBy,
+	operator.create_time         operator_createTime
+</sql>
+<!-- ////////////////////////////////////////////////////////////////////// -->
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+	<if test="oper.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="oper.pageUtil.pageOffset==0">
+		    select *  from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	 </trim>
+	</if>
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	 <if test="oper.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="oper.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${oper.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${oper.pageUtil.lastRowCount}) where rownum_ &gt;
+			${oper.pageUtil.pageOffset}
+		 </otherwise>
+	</choose>
+	 </trim>
+	</if>
+</sql>
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	SELECT S_OPERATOR.NEXTVAL FROM DUAL
+</select>
+
+<select id="findOperator" resultMap="tableMapToModelChild" parameterType="java.lang.Object">  
+    select o.operator_no,o.operator_id,o.operator_name,o.operator_pwd,o.operator_email,
+    o.operator_tel,o.operator_describe,o.type,o.status,o.total_size,o.used_size,
+    o.company_no,o.create_by,o.create_time 
+     from sys_operator o where o.operator_no=#{operatorNo}
+</select>
+
+<select id="findOperatorsWithRole" resultMap="tableMapToModelChild"  parameterType="com.db.bms.entity.Operator">
+	select OPERATOR_NO,OPERATOR_ID,OPERATOR_NAME,OPERATOR_PWD,OPERATOR_EMAIL,
+    OPERATOR_TEL,OPERATOR_DESCRIBE,TYPE,STATUS,TOTAL_SIZE,USED_SIZE,
+    COMPANY_NO,CREATE_BY,CREATE_TIME  
+    from sys_operator where 1=1
+    <if test="operatorId != null  and operatorId != '' " >
+     and OPERATOR_ID=#{operatorId}
+    </if>
+    <if test="operatorPwd != null  and operatorPwd != '' " >
+    and OPERATOR_PWD=#{operatorPwd}
+    </if>
+   <if test="status != null  and status != '' " >
+    and STATUS=#{status}
+   </if>
+</select>
+
+<!-- 查询 ,总行数,分页 ,模型 -->
+<select id="findOperatorCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Operator">
+     select count(1) from sys_operator o where 1=1
+     <if test="oper.curOper != null">
+       and o.operator_no != #{oper.curOper.operatorNo}
+     </if>
+     <if test="oper.operatorId != null  and oper.operatorId != '' " >
+        and o.operator_id like  &apos;%${oper.operatorId}%&apos;
+     </if>
+     <if test="oper.status != null  and oper.status >= 0 " >
+        and o.status=#{oper.status}
+     </if>
+     <if test="oper.companyNo != null" >
+        and o.company_no=#{oper.companyNo}
+     </if> 
+     <if test="oper.createBy != null">
+         and o.create_by=#{oper.createBy}
+      </if>
+</select>
+
+<!-- 查询,排序,分页,模型  -->
+<select id="findOperators" resultMap="tableMapToModelChild"  parameterType="com.db.bms.entity.Operator">
+    select o.operator_no,o.operator_id,o.operator_name,o.operator_pwd,o.operator_email,
+    o.operator_tel,o.operator_describe,o.type,o.status,o.total_size,o.used_size,
+    o.company_no,o.create_by,o.create_time 
+    from sys_operator o where 1=1
+     <if test="oper.curOper != null">
+       and o.operator_no != #{oper.curOper.operatorNo}
+     </if>
+     <if test="oper.operatorId != null  and oper.operatorId != '' " >
+        and o.operator_id like  &apos;%${oper.operatorId}%&apos;
+     </if>
+     <if test="oper.status != null  and oper.status >= 0 " >
+        and o.status=#{oper.status}
+     </if>
+     <if test="oper.companyNo != null" >
+        and o.company_no=#{oper.companyNo}
+     </if> 
+     <if test="oper.createBy != null">
+         and o.create_by=#{oper.createBy}
+      </if>
+    order by o.operator_no desc
+	<if test="oper.pageUtil.paging == true" >
+		limit ${oper.pageUtil.pageOffset},${oper.pageUtil.pageSize} 
+	</if>
+</select>
+  	
+<!-- 查询,主键查询   -->
+<select id="findOperatorById"  resultMap="tableMapToModelChild" parameterType="java.lang.Object">
+	select OPERATOR_NO,OPERATOR_ID,OPERATOR_NAME,OPERATOR_PWD,OPERATOR_EMAIL,
+    OPERATOR_TEL,OPERATOR_DESCRIBE,TYPE,STATUS,TOTAL_SIZE,USED_SIZE,
+    COMPANY_NO,CREATE_BY,CREATE_TIME from sys_operator where OPERATOR_NO=#{operatorNo}
+</select>
+
+<select id="getOperatorCountByIdOrName" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Operator">
+    select count(1) from sys_operator where 1=1
+    <if test="operatorNo != null  and operatorNo > 0 " >
+    and OPERATOR_NO != #{operatorNo}
+   </if>
+    <if test="operatorId != null  and operatorId != '' " >
+    and OPERATOR_ID=#{operatorId}
+   </if>
+   <if test="operatorName != null and operatorName != '' " >
+    and OPERATOR_NAME=#{operatorName}
+   </if>
+</select>
+
+<select id="getOperatorsByCompanyNo"  resultType="java.lang.Integer" >
+    select count(1) from sys_operator o,
+    (select c1.company_no from bus_company c1,
+    (select c.path from bus_company c where c.company_no in
+    <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    ) c2 
+    where c1.path like c2.path || '%') c3 
+    where o.company_no=c3.company_no
+</select> 
+
+<select id="getOperatorsByInternetNo"  resultType="java.lang.Integer" >
+    select count(1) from sys_operator o,
+    (select c1.internet_no from bus_internet c1,
+    (select c.path from bus_internet c where c.internet_no in
+    <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    ) c2 
+    where c1.path like c2.path || '%') c3 
+    where o.internet_no=c3.internet_no
+</select>
+
+<select id="findOperatorCountByRoleNo"  resultType="java.lang.Integer" >
+	select count(1) from sys_operator_role where ROLE_NO in 
+	 <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+</select>
+
+<!-- 查询,SQL -->
+<select id="findOperatorsById"  resultMap="tableMapToModel">
+   select o.operator_no,o.operator_id,o.operator_name,o.operator_pwd,o.operator_email,
+   o.operator_tel,o.operator_describe,o.type,o.status,o.total_size,o.used_size,
+   o.company_no,o.create_by,o.create_time 
+   from sys_operator o where o.operator_no in
+   <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+
+<delete id="deleteOperatorRole" parameterType="java.lang.Long">
+	delete from sys_operator_role  where  OPERATOR_NO=#{OPERATOR_NO}
+</delete>
+
+<!-- 修改,主键更新  -->
+<update id="updateOperator" parameterType="com.db.bms.entity.Operator" >
+	update sys_operator set OPERATOR_ID=#{operatorId},OPERATOR_NAME=#{operatorName},OPERATOR_PWD=#{operatorPwd},
+    OPERATOR_EMAIL=#{operatorEmail},OPERATOR_TEL=#{operatorTel},OPERATOR_DESCRIBE=#{operatorDescribe},TOTAL_SIZE=#{totalSize},TYPE=#{type},
+    STATUS=#{status},COMPANY_NO=#{companyNo} 
+    where OPERATOR_NO=#{operatorNo}
+</update>
+
+<!-- 添加,插入记录   -->
+<insert id="addOperator"  parameterType="com.db.bms.entity.Operator" >
+    insert into sys_operator(OPERATOR_NO,OPERATOR_ID,OPERATOR_NAME,OPERATOR_PWD,OPERATOR_EMAIL,
+    OPERATOR_TEL,OPERATOR_DESCRIBE,TYPE,STATUS,TOTAL_SIZE,
+    COMPANY_NO,CREATE_BY,CREATE_TIME) 
+    values(#{operatorNo},#{operatorId},#{operatorName},#{operatorPwd},#{operatorEmail},#{operatorTel},#{operatorDescribe}
+    ,#{type},#{status},#{totalSize},#{companyNo},#{createBy},#{createTime})
+</insert>
+
+<!-- 删除,主键删除   -->
+<delete id="deleteOperator" parameterType="com.db.bms.entity.Operator">
+    delete from sys_operator where OPERATOR_NO=#{operatorNo}
+</delete>
+
+
+<!-- 查询,实体查询   -->
+<select id="findAllOperators"  resultMap="tableMapToModel" parameterType="com.db.bms.entity.Operator">
+	select OPERATOR_NO,OPERATOR_ID,OPERATOR_NAME,OPERATOR_PWD,OPERATOR_EMAIL,
+    OPERATOR_TEL,OPERATOR_DESCRIBE,TYPE,STATUS,TOTAL_SIZE,USED_SIZE, 
+    COMPANY_NO,CREATE_BY,CREATE_TIME from sys_operator o 
+    where 1=1 
+    <if test="companyNo != null and companyNo > 0">
+    and o.company_no=#{companyNo}
+    </if>
+    <if test="type != null and type >= 0">
+    and o.type=#{type}
+    </if>
+     <if test="createBy != null">
+         and (o.create_by=#{createBy} or o.operator_no=#{createBy})
+      </if>
+</select>
+
+<insert id="addOperatorRole" >
+	insert into sys_operator_role (OPERATOR_NO,ROLE_NO)   values   (#{operatorNo},#{roleNo}) 
+</insert>
+
+<!-- 修改基本信息  -->
+<update id="updatePwd" parameterType="com.db.bms.entity.Operator" >
+    update sys_operator set OPERATOR_NAME=#{operatorName},OPERATOR_PWD=#{operatorPwd},OPERATOR_EMAIL=#{operatorEmail},OPERATOR_TEL=#{operatorTel}
+    where OPERATOR_NO=#{operatorNo}
+</update>
+
+<!-- 查询处理本人和超级管理员的用户 -->
+<select id="findOtherCountOperators" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Operator">
+	select count(1) from sys_operator WHERE OPERATOR_NO not IN(#{operatorNo},'-1')  
+	<if test="operatorId != null and operatorId != '' " >and OPERATOR_ID like  &apos;%${operatorId}%&apos;</if>
+	<if test="status != null and status != '' " > and STATUS = '${status}'</if>
+	<if test="companyNo != null and companyNo != '' " > and COMPANY_NO  = '${companyNo}'</if>
+</select> 
+<select id="findOtherOperators" resultMap="tableMapToModel" parameterType="com.db.bms.entity.Operator">
+     	<choose>
+		<when test="pageUtil.pageOffset==0">
+		    select *  from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+     select * from sys_operator WHERE OPERATOR_NO not IN(#{operatorNo},'-1')
+   	<if test="operatorId != null and operatorId != '' " >and OPERATOR_ID like  &apos;%${operatorId}%&apos;</if>
+	<if test="status != null and status != '' " > and STATUS = '${status}'</if>
+	<if test="companyNo != null and companyNo != '' " > and COMPANY_NO  = '${companyNo}'</if>
+	<choose>
+		<when test="pageUtil.pageOffset==0">
+			)where rownum &lt;= ${pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${pageUtil.lastRowCount}) where rownum_ &gt;
+			${pageUtil.pageOffset}
+		 </otherwise>
+	</choose>  
+</select>
+
+
+<select id="selectBySql"  resultMap="tableMapToModel" parameterType="java.lang.String">
+        ${sql}
+</select>
+
+<update id="setUsedSize" parameterType="java.lang.Long" >
+	update sys_operator set used_size=#{usedSize} 
+    where operator_no=#{operatorNo}
+</update>
+
+<insert id="addOperatorCompany" >
+	insert into sys_operator_company(operator_no,company_no) values(#{operatorNo},#{companyNo})
+</insert>
+
+<delete id="deleteOperatorCompany" parameterType="java.lang.Long">
+   delete from sys_operator_company where operator_no=#{operatorNo}
+</delete>
+
+<delete id="deleteOperatorCompanyByCompanyNo" parameterType="java.lang.Long">
+delete from sys_operator_company where company_no=#{companyNo}
+</delete>
+
+<!-- 查询 ,总行数,分页 ,模型 -->
+<select id="findResourceAllocOperatorCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Operator">
+     select count(1) from sys_operator o,bus_resource_allocation a where 1=1 and o.operator_no=a.operator_no 
+     <if test="type != null">
+       and a.type=#{type}
+     </if>
+     <if test="resourceId != null">
+     and a.resource_id=#{resourceId}
+     </if>
+     <if test="oper.operatorId != null  and oper.operatorId != '' " >
+        and o.operator_id like  &apos;%${oper.operatorId}%&apos;
+     </if>
+     <if test="oper.status != null  and oper.status >= 0 " >
+        and o.status=#{oper.status}
+     </if>
+     <if test="oper.companyNo != null" >
+        and o.company_no=#{oper.companyNo}
+     </if> 
+     <if test="oper.createBy != null">
+         and o.create_by=#{oper.createBy}
+      </if>
+</select>
+
+<!-- 查询,排序,分页,模型  -->
+<select id="findResourceAllocOperators" resultMap="tableMapToModelChild"  parameterType="com.db.bms.entity.Operator">
+	<if test="oper.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="oper.pageUtil.pageOffset==0">
+		    select *  from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	 </trim>
+	</if>
+    select o.operator_no,o.operator_id,o.operator_name,o.operator_pwd,o.operator_email,
+    o.operator_tel,o.operator_describe,o.type,o.status,o.total_size,o.used_size,
+    o.company_no,o.create_by,o.create_time,a.id,a.cmd_str 
+    from sys_operator o,bus_resource_allocation a where 1=1 and o.operator_no=a.operator_no 
+     <if test="type != null">
+       and a.type=#{type}
+     </if>
+     <if test="resourceId != null">
+     and a.resource_id=#{resourceId}
+     </if>
+     <if test="oper.operatorId != null  and oper.operatorId != '' " >
+        and o.operator_id like  &apos;%${oper.operatorId}%&apos;
+     </if>
+     <if test="oper.status != null  and oper.status >= 0 " >
+        and o.status=#{oper.status}
+     </if>
+     <if test="oper.companyNo != null" >
+        and o.company_no=#{oper.companyNo}
+     </if> 
+     <if test="oper.createBy != null">
+         and o.create_by=#{oper.createBy}
+      </if>
+    order by o.operator_no desc
+    <if test="oper.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="oper.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${oper.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${oper.pageUtil.lastRowCount}) where rownum_ &gt;
+			${oper.pageUtil.pageOffset}
+		 </otherwise>
+	</choose>
+	 </trim>
+	</if>
+</select>
+
+<!-- 查询 ,总行数,分页 ,模型 -->
+<select id="findResourceNoAllocOperatorCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Operator">
+     select count(1) from sys_operator o where 1=1
+     and o.operator_no not in(select a.operator_no from bus_resource_allocation a where a.type=#{type} and a.resource_id=#{resourceId})
+     <if test="oper.operatorNo != null">
+       and o.operator_no != #{oper.operatorNo}
+     </if>
+     <if test="oper.operatorId != null  and oper.operatorId != '' " >
+        and o.operator_id like  &apos;%${oper.operatorId}%&apos;
+     </if>
+     <if test="oper.type != null" >
+       and o.type=#{oper.type}
+     </if>
+     <if test="oper.status != null  and oper.status >= 0 " >
+        and o.status=#{oper.status}
+     </if>
+     <if test="oper.companyNo != null" >
+        and o.company_no=#{oper.companyNo}
+     </if> 
+     <if test="oper.createBy != null">
+         and o.operator_no!=#{oper.createBy}
+     </if>
+</select>
+
+<!-- 查询,排序,分页,模型  -->
+<select id="findResourceNoAllocOperators" resultMap="tableMapToModelChild"  parameterType="com.db.bms.entity.Operator">
+	<if test="oper.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="oper.pageUtil.pageOffset==0">
+		    select *  from (
+		</when>
+		<otherwise>
+		    select * from (select row_.*, rownum rownum_ from (
+		</otherwise>
+	</choose>
+	 </trim>
+	</if>
+    select o.operator_no,o.operator_id,o.operator_name,o.operator_pwd,o.operator_email,
+    o.operator_tel,o.operator_describe,o.type,o.status,o.total_size,o.used_size,
+    o.company_no,o.create_by,o.create_time 
+    from sys_operator o where 1=1 and o.operator_no not in(select a.operator_no from bus_resource_allocation a where a.type=#{type} and a.resource_id=#{resourceId})
+     <if test="oper.operatorNo != null">
+       and o.operator_no != #{oper.operatorNo}
+     </if>
+     <if test="oper.operatorId != null  and oper.operatorId != '' " >
+        and o.operator_id like  &apos;%${oper.operatorId}%&apos;
+     </if>
+     <if test="oper.type != null" >
+       and o.type=#{oper.type}
+     </if>
+     <if test="oper.status != null  and oper.status >= 0 " >
+        and o.status=#{oper.status}
+     </if>
+     <if test="oper.companyNo != null" >
+        and o.company_no=#{oper.companyNo}
+     </if> 
+     <if test="oper.createBy != null">
+         and o.operator_no!=#{oper.createBy}
+      </if>
+    order by o.operator_no desc
+    <if test="oper.pageUtil.paging == true" >
+    <trim prefix="">
+	<choose>
+		<when test="oper.pageUtil.pageOffset==0">
+			)where rownum &lt;= ${oper.pageUtil.lastRowCount}
+		      </when>
+		<otherwise>
+			) row_ where rownum &lt;= ${oper.pageUtil.lastRowCount}) where rownum_ &gt;
+			${oper.pageUtil.pageOffset}
+		 </otherwise>
+	</choose>
+	 </trim>
+	</if>
+</select>
+
+<!-- 查询用户可用资源 -->
+<select id="findResourceId" resultType="java.lang.Long">
+     select a.RESOURCE_ID from sys_operator_resource a where OPERATOR_ID=#{operatorId} and TYPE=#{type}
+</select> 
+
+<!-- 查询有该资源权限的用户 -->
+<select id="findResourceOperator" resultType="java.lang.String">
+     select a.OPERATOR_ID from sys_operator_resource a where RESOURCE_ID=#{resourceId} and TYPE=#{type}
+</select>
+
+<!-- 添加用户资源 -->
+<insert id="addOperatorResource"  parameterType="com.db.bms.entity.Operator" >
+    insert into sys_operator_resource(OPERATOR_ID,RESOURCE_ID,TYPE) 
+    values(#{operatorId},#{resourceId},#{type})
+</insert>
+
+<select id="findOperatorResourceCount" resultType="java.lang.Integer">
+	select count(1) from sys_operator_resource where RESOURCE_ID=#{resourceId} and OPERATOR_ID=#{operatorId} and TYPE=#{type}
+</select>
+
+<!-- 根据ID查询 -->
+<select id="findOperatorId" resultType="java.lang.Long">  
+    select CREATE_BY from sys_operator where 1=1 
+    <if test="operatorId != null">
+        and OPERATOR_ID=#{operatorId}
+    </if>
+</select>
+</mapper>

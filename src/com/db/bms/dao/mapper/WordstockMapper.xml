@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+<mapper namespace="com.db.bms.dao.WordstockMapper" >
+
+<!-- Result Map 数据库映射到实体类  -->
+<resultMap id="mapWordstock" type="com.db.bms.entity.Wordstock" >
+	<id     column="Wordstock_word_no"         property="wordNo"/>
+	<result column="Wordstock_word"            property="word"/>
+	<result column="Wordstock_operator_no"     property="operatorNo"/>
+	<result column="Wordstock_create_time"     property="createTime"/>
+</resultMap>
+
+<!--///////////////////// 连接查询 ////////////////////////-->
+<resultMap type="com.db.bms.entity.Wordstock" id="mapWordstock_Operator" extends="mapWordstock">
+  	<association property="operator" javaType="com.db.bms.entity.Operator">
+		<id     column="Operator_operator_no"       property="operatorNo" />
+		<result column="Operator_operator_no"       property="operatorNo"/>
+		<result column="Operator_operator_id"       property="operatorId"/>
+		<result column="Operator_operator_name"     property="operatorName"/>
+		<result column="Operator_operator_pwd"      property="operatorPwd"/>
+		<result column="Operator_type"              property="type"/>
+		<result column="Operator_status"            property="status"/>
+		<result column="Operator_operator_email"    property="operatorEmail"/>
+		<result column="Operator_operator_tel"      property="operatorTel"/>
+		<result column="Operator_operator_describe" property="operatorDescribe"/>
+		<result column="Operator_company_no"        property="companyNo"/>
+		<result column="Operator_create_by"         property="createBy"/>
+		<result column="Operator_create_time"       property="createTime"/>
+  	</association>
+</resultMap>
+
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+</sql>
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="wordstock.pageUtil.paging == true" >
+		limit ${wordstock.pageUtil.pageOffset},${wordstock.pageUtil.pageSize} 
+	</if>
+</sql>
+<!-- //////////////////////////////////////////////////////////////////////// -->
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	select s_wordstock.nextval from dual
+</select>
+
+<!--  table fields  -->
+<sql id="fieldsWordstock">
+	bus_wordstock.word_no              Wordstock_word_no,
+	bus_wordstock.word                 Wordstock_word,
+	bus_wordstock.operator_no          Wordstock_operator_no,
+	bus_wordstock.create_time          Wordstock_create_time
+</sql>
+
+<sql id = "fieldsOperator">
+	sys_operator.operator_no        Operator_operator_no,
+	sys_operator.operator_id        Operator_operator_id,
+	sys_operator.operator_name      Operator_operator_name, 
+	sys_operator.operator_pwd       Operator_operator_pwd,
+	sys_operator.operator_email     Operator_operator_email, 
+	sys_operator.operator_tel       Operator_operator_tel,
+	sys_operator.operator_describe  Operator_operator_describe,
+	sys_operator.type               Operator_type,
+	sys_operator.status             Operator_status 
+</sql>
+<!-- //////////////////////////////////////////////////////////////////////// -->
+
+<!-- select by no(primary key) -->
+<select id="selectByNo" parameterType="java.lang.Long" resultMap="mapWordstock_Operator">
+	select <include refid="fieldsWordstock"/>, <include refid="fieldsOperator"/>
+	from bus_wordstock
+	left join sys_operator on bus_wordstock.operator_no = sys_operator.operator_no
+	where bus_wordstock.word_no = #{no}
+</select>
+
+<!-- select by no s(primary key array) -->
+<select id="selectByNos"  resultMap="mapWordstock_Operator" >
+	select <include refid="fieldsWordstock"/>, <include refid="fieldsOperator"/>
+	from bus_wordstock
+	left join sys_operator on bus_wordstock.operator_no = sys_operator.operator_no
+	where word_no in 
+	<foreach item="item" index="index" collection="nos" open="(" separator="," close=")">
+    	#{item}
+    </foreach>
+</select>
+
+
+<select id="queryOperatorAdminPermission" resultType="java.lang.Integer" parameterType="com.db.bms.entity.Wordstock" >
+	<choose>
+		<when test="wordstock.curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin  -->
+			select 1 from dual
+		</when>
+		<when test="wordstock.curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+			select 0 from dual 
+		</when>
+		<when test="wordstock.curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			select 0 from dual 
+		</when>
+		<otherwise>
+			select 0 from dual 
+		</otherwise>
+	</choose>
+</select>
+
+<!-- 查询,实体查询   -->
+<!-- ******************************************************** -->
+<!--  sql fragment -->
+<!-- ******************************************************** -->
+<sql id="filterSearch">
+   <if test="wordstock.word != null  and wordstock.word != '' " >
+       and bus_wordstock.word like &apos;%${wordstock.word}%&apos;
+   </if>
+</sql>
+
+<!-- ******************************************************** -->
+<select id="selectWordstockCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Wordstock">
+   select count(1) from bus_wordstock
+   where 1=1
+   <include refid="filterSearch"/>
+</select>
+
+<select id="selectWordstock" resultMap="mapWordstock_Operator"  parameterType="com.db.bms.entity.Wordstock">
+	<include refid="pagePrefix" />
+	
+   	select <include refid="fieldsWordstock"/>, <include refid="fieldsOperator"/> 
+ 	from bus_wordstock 
+	left join sys_operator on bus_wordstock.operator_no = sys_operator.operator_no
+	where 1=1
+   	<include refid="filterSearch"/>
+   	order by bus_wordstock.create_time desc
+	
+	<include refid="pageSuffix"/>
+</select>
+<!-- ******************************************************** -->
+
+<!-- need to set wordstock.articleId -->
+
+<!-- 查询,主键查询   -->
+<select id="getWordstockCountByIdOrName" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Wordstock">
+	select count(1) from bus_wordstock where 1=1 
+    <if test="wordstock.wordNo != null  and wordstock.wordNo > 0 " >
+    and word_no != #{wordstock.wordNo} 
+   	</if>
+    <if test="wordstock.word != null  and wordstock.word != '' " >
+    and word = #{wordstock.word}
+   	</if>
+</select>
+
+<select id="getWordstockRefCount" resultType="java.lang.Integer"  parameterType="java.lang.Long">
+	select 0 from dual
+</select>
+
+<insert id="addWordstock"  parameterType="com.db.bms.entity.Wordstock" >
+    insert into bus_wordstock(word_no, word, operator_no, create_time) values (
+    	#{wordstock.wordNo, jdbcType=NUMERIC},
+    	#{wordstock.word, jdbcType=VARCHAR},
+    	#{wordstock.operatorNo, jdbcType=NUMERIC},
+    	#{wordstock.createTime, jdbcType=VARCHAR} )
+</insert>
+
+<update id="updateWordstock" parameterType="com.db.bms.entity.Wordstock" >
+	update bus_wordstock set word=#{wordstock.word, jdbcType=VARCHAR} 
+	where word_no=#{wordstock.wordNo}
+</update>
+
+
+<!-- ******************************************************** -->
+
+<sql id="filterByOperatorForWrite"> <!-- write: update/delete -->
+	<choose>
+		<when test="wordstock.curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin, empty -->
+		</when>
+		<when test="wordstock.curOper.type == @com.db.bms.entity.Operator@TYPE_COMPANY_ADMIN">
+			and (bus_wordstock.operator_no = #{wordstock.curOper.operatorNo} or sys_operator.create_by=#{wordstock.curOper.operatorNo})
+		</when>
+		<when test="wordstock.curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			and bus_wordstock.operator_no = #{wordstock.curOper.operatorNo}
+		</when>
+		<otherwise>
+			and 1=0
+		</otherwise>
+	</choose>
+</sql>	
+
+<select id="isWordstockExit" parameterType="com.db.bms.entity.Wordstock" resultType="java.lang.Integer">
+	select count(1) from bus_wordstock left join sys_operator on bus_wordstock.operator_no=sys_operator.operator_no
+	where bus_wordstock.word_no=#{wordstock.wordNo}
+	<include refid="filterByOperatorForWrite" />
+</select>
+
+<!-- delete, wordstock.curOper muset set -->
+<delete id="deleteWordstock" parameterType="com.db.bms.entity.Wordstock">
+    delete from bus_wordstock where word_no=#{wordstock.wordNo}
+</delete>
+<!-- ******************************************************** -->
+
+<select id="getAllWordstockCount" resultType="java.lang.Integer">
+	select count(*) from bus_wordstock
+</select>
+
+<select id="getWordstocks" resultType="java.lang.String">
+	select bus_wordstock.word from bus_wordstock
+</select>
+
+</mapper>

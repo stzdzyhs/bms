@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+         符号转义说明
+    &lt;          < 
+    &gt;          >  
+    &lt;&gt;     <>
+    &amp;        & 
+    &apos;       '
+    &quot;       "
+  <![CDATA[ 这里写你的SQL或者符号 ]]> 
+ -->
+
+<mapper namespace="com.db.bms.dao.ClientMapper">  
+ 
+ 
+<!-- Result Map 数据库映射到实体类  --> 
+<resultMap id="client" type="com.db.bms.entity.Client" > 
+	<id column="CLIENT_NO" property="clientNo"/>
+	<result column="CLIENT_ID" property="clientId"/>
+	<result column="CLIENT_NAME" property="clientName"/>
+	<result column="CLIENT_DESCRIBE" property="clientDescribe"/> 
+	<result column="CREATE_BY" property="createBy"/> 
+	<result column="CREATE_TIME" property="createTime"/> 
+	<result column="PARENT_ID" property="parentId"/>  
+	<result column="PATH" property="path"/>
+</resultMap> 
+
+<resultMap id='map2Client' type='com.db.bms.entity.Client' >
+	<id column='client_clientNo' property='clientNo'/>
+	<result column='client_clientId' property='clientId'/>
+	<result column='client_clientName' property='clientName'/>
+	<result column='client_clientDescribe' property='clientDescribe'/>
+	<result column='client_createBy' property='createBy'/>
+	<result column='client_createTime' property='createTime'/>
+	<result column='client_updateTime' property='updateTime'/>
+	<result column='client_parentId' property='parentId'/>
+	<result column='client_path' property='path'/>
+	<result column='client_companyNo' property='companyNo'/>
+</resultMap>
+<sql id='fields2Client'>
+	client.client_no         client_clientNo,
+	client.client_id         client_clientId,
+	client.client_name       client_clientName,
+	client.client_describe   client_clientDescribe,
+	client.create_by         client_createBy,
+	client.create_time       client_createTime,
+	client.update_time       client_updateTime,
+	client.parent_id         client_parentId,
+	client.path              client_path,
+	client.company_no        client_companyNo
+</sql>
+
+<!--/////////////// 级联递归查询  一对多 ///////////////-->
+<resultMap type="com.db.bms.entity.Client" id="clientChild" extends="client">
+  <association property="parent" select="findClientByNo" column="PARENT_ID">
+  </association>
+  <association property="operator" select="com.db.bms.dao.OperatorMapper.findOperatorById" column="CREATE_BY">
+  </association>
+  
+  <collection property="cardRegionList" ofType="com.db.bms.entity.CardRegion" select="com.db.bms.dao.CardRegionMapper.getCardRegionByClientNo" column="CLIENT_NO" >
+  </collection>
+</resultMap>
+ 
+<!-- oracle分页前缀 -->
+<sql id="pagePrefix">
+</sql>
+
+<!-- oracle分页后缀 -->
+<sql id="pageSuffix">
+	<if test="client.pageUtil.paging == true" >
+		limit ${client.pageUtil.pageOffset},${client.pageUtil.pageSize} 
+	</if>
+</sql>    
+
+<select id="getPrimaryKey" resultType="java.lang.Long">
+	SELECT S_COMPANY.NEXTVAL FROM DUAL
+</select> 
+
+<select id="findClientByNo" parameterType="java.lang.Long" resultMap="clientChild">
+	select c.CLIENT_NO,c.CLIENT_ID,c.CLIENT_NAME,c.CLIENT_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+		from bus_client c where c.CLIENT_NO=#{clientNo} 
+</select>
+ 
+ <select id="findClientsByNo"  resultMap="client" >
+	select CLIENT_NO,CLIENT_ID,CLIENT_NAME,CLIENT_DESCRIBE,CREATE_BY,CREATE_TIME,PARENT_ID,PATH 
+	from bus_client  
+	where CLIENT_NO in 
+	 <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+</select> 
+
+<select id="findClientByParentId" parameterType="java.lang.Long" resultMap="client">
+	select c.CLIENT_NO,c.CLIENT_ID,c.CLIENT_NAME,c.CLIENT_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+	from bus_client c 
+	where c.parent_id=#{parentid} 
+</select> 
+
+<select id="findClientById" resultMap="clientChild" parameterType="java.lang.String">
+ select c.CLIENT_NO,c.CLIENT_ID,c.CLIENT_NAME,c.CLIENT_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+ from bus_client c 
+ where c.CLIENT_ID=#{clientId}
+</select>
+ 
+<select id="findClientByIds" resultMap="clientChild" parameterType="java.lang.String">
+ select c.CLIENT_NO,c.CLIENT_ID,c.CLIENT_NAME,c.CLIENT_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID
+ from bus_client c 
+ where c.CLIENT_ID in
+ 	 <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+</select>  
+
+<!-- 查询,实体查询   -->
+<select id="findAllClients"  resultMap="clientChild" parameterType="com.db.bms.entity.Client">
+	select c.CLIENT_NO,c.CLIENT_ID,c.CLIENT_NAME,c.CLIENT_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID 
+	from bus_client c where 1=1 
+   <if test="distClientList != null  and distClientList.size > 0" >
+       and c.CLIENT_NO in
+       	 <foreach item="item" index="index" collection="distClientList" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+   </if>
+    order by c.CLIENT_ID
+</select>
+
+<select id="findClientCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Client">
+   select count(1) from bus_client c where 1=1 
+   <if test="client.path != null  and client.path != '' " >
+       and c.path like &apos;${client.path}%&apos; 
+       and c.path != #{client.path}
+   </if>
+   <if test="client.clientName != null  and client.clientName != '' " >
+       and c.CLIENT_NAME like  &apos;%${client.clientName}%&apos; 
+   </if> 
+   <if test="client.clientId != null  and client.clientId != '' " >
+       and c.CLIENT_ID like  &apos;%${client.clientId}%&apos; 
+   	</if>
+   <if test="distClientList != null  and distClientList.size > 0" >
+       and c.CLIENT_NO in
+       	 <foreach item="item" index="index" collection="distClientList" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+   </if>
+</select>
+
+<select id="findClients" resultMap="clientChild"  parameterType="com.db.bms.entity.Client">
+	<include refid="pagePrefix"></include>
+	
+	select c.CLIENT_NO,c.CLIENT_ID,c.CLIENT_NAME,c.CLIENT_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID,c.PATH 
+    from bus_client c
+    where 1=1 
+   	<if test="client.path != null  and client.path != '' " >
+		and c.path like &apos;${client.path}%&apos; 
+		and c.path != #{client.path}
+   	</if>
+   	<if test="client.clientName != null  and client.clientName != '' " >
+    	and c.CLIENT_NAME like  &apos;%${client.clientName}%&apos; 
+   	</if> 
+   	<if test="client.clientId != null  and client.clientId != '' " >
+       and c.CLIENT_ID like  &apos;%${client.clientId}%&apos; 
+   	</if>
+   	<if test="distClientList != null  and distClientList.size > 0" >
+       	and c.CLIENT_NO in
+       	<foreach item="item" index="index" collection="distClientList" open="(" separator="," close=")">
+      		#{item}
+    	</foreach>
+   	</if>
+	order by c.create_time,c.path
+	
+	<include refid="pageSuffix"></include>
+</select>
+
+<select id="getClientCountByIdOrName" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Client">
+    select count(1) 
+    from bus_client 
+    where 1=1 
+    <if test="clientNo != null  and clientNo > 0 " >
+    and CLIENT_NO != #{clientNo} 
+   </if>
+    <if test="clientId != null  and clientId != '' " >
+    and CLIENT_ID=#{clientId}
+   </if>
+   <if test="clientName != null and clientName != '' " >
+    and CLIENT_NAME=#{clientName}
+   </if>
+</select>
+
+<insert id="addClient"  parameterType="com.db.bms.entity.Client" >
+    insert into bus_client(
+		client_no,
+		client_id,
+		client_name,
+		client_describe,
+		create_by,
+		create_time,
+		update_time,
+		parent_id,
+		path
+    ) 
+    values(
+		#{client.clientNo},
+		#{client.clientId},
+		#{client.clientName},
+		#{client.clientDescribe},
+		#{client.createBy},
+		#{client.createTime},
+		#{client.updateTime},
+		#{client.parentId,jdbcType=VARCHAR},
+		#{client.path}
+    )
+</insert>
+
+<update id="updateClient" parameterType="com.db.bms.entity.Client" >
+	update bus_client set
+		client_id=#{client.clientId,jdbcType=VARCHAR},
+		client_name=#{client.clientName,jdbcType=VARCHAR},
+		client_describe=#{client.clientDescribe,jdbcType=VARCHAR},
+		parent_id=#{client.parentId,jdbcType=VARCHAR},
+		path=#{client.path,jdbcType=VARCHAR},
+		update_time =#{client.updateTime,jdbcType=VARCHAR}
+	where client_no=#{client.clientNo}
+</update>
+
+<select id="findClientsWithSubByNo"  resultMap="client" >
+    select c.CLIENT_NO,c.CLIENT_ID,c.CLIENT_NAME,c.CLIENT_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID,c.PATH 
+    from bus_client c,
+    (select CLIENT_NO,PATH from 
+    bus_client where CLIENT_NO in 
+   	<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    ) c1 
+    where c.CLIENT_NO=c.CLIENT_NO and c.PATH like c1.path || '%'
+</select>
+
+<delete id="deleteClient" parameterType="com.db.bms.entity.Client">
+    delete from bus_client where 1=1
+    <if test="clientNo != null  and clientNo > 0 " >
+    and CLIENT_NO = #{clientNo} 
+    </if>
+</delete> 
+ 
+<delete id="deleteClientByNos" parameterType="java.lang.Long">
+    delete from bus_client where client_no in 
+   	<foreach item="item" index="index" collection="nos" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+</delete> 
+
+<delete id="deleteClientCardRegionMapByClientNo">
+  	delete from bus_client_card_region_map 
+  	where client_no=#{clientNo}
+</delete>
+ 
+<delete id="deleteClientCardRegionMaps">
+	delete from bus_client_card_region_map 
+	where CLIENT_NO=#{clientNo} and region_id in
+   	<foreach item="item" index="index" collection="regionIds" open="(" separator="," close=")">
+    	#{item}
+   	</foreach>
+</delete>
+ 
+<insert id="addClientCardRegionMap">
+ insert into bus_client_card_region_map(client_no,region_id) 
+ values(#{clientNo},#{regionId})
+</insert>
+ 
+<select id="findClientCardRegionMapCountByRegionId" resultType="java.lang.Integer">
+   select count(1) from bus_client_card_region_map where region_id in
+   <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+ 
+<select id="findClientCountById" resultType="java.lang.Integer">
+   select count(1) from bus_client c where c.client_id in
+   <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+   </foreach>
+</select>
+ 
+<select id="findDistClientByOperNo" resultMap="client"  parameterType="java.lang.Long">
+ select c.CLIENT_NO,c.CLIENT_ID,c.CLIENT_NAME,c.CLIENT_DESCRIBE,c.CREATE_BY,c.CREATE_TIME,c.PARENT_ID,c.PATH 
+ from bus_client c,sys_operator_client o
+ where c.CLIENT_NO=o.CLIENT_NO and o.operator_no=#{operatorNo}
+</select>
+ 
+<!-- ///////////////////////////////////////////////////////////// -->
+ 
+<sql id="fliterSearch">
+<!--    <if test="path != null  and path != '' " > -->
+<!--        and path like &apos;${path}%&apos;  -->
+<!--        and path != #{path} -->
+<!--    </if> -->
+   <if test="clientId!= null  and clientId != '' " >
+       and client_id like  &apos;%${clientId}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="clientName != null  and clientName != '' " >
+       and client_name like  &apos;%${clientName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+</sql>
+
+<sql id="filterSearch2">
+   <if test="client.clientId!= null and client.clientId != '' " >
+       and client.client_id like  &apos;%${client.clientId}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+   <if test="client.clientName != null and client.clientName != '' " >
+       and client.client_name like  &apos;%${client.clientName}%&apos; <!-- escape '_' , see GV-32 -->
+   </if>
+</sql>
+
+ 
+<sql id="filterByOperatorForRead" >
+	<choose>
+		<when test="curOper.type==null">
+			and 1=0
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_SUPER_ADMIN">
+			<!-- for admin, empty -->
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_CLIENT_ADMIN">
+			and (bus_client.client_no = #{curOper.clientNo}) 
+		</when>
+		<when test="curOper.type == @com.db.bms.entity.Operator@TYPE_ORDINARY_OPER">
+			and (bus_client.client_no = #{curOper.clientNo}) 
+		</when>
+		<otherwise>
+			and (1=0)
+		</otherwise>
+	</choose>
+</sql>	
+
+<!-- 查找operator关联client, 不包括子client -->
+<select id="findOperatorClients" resultMap="client"  parameterType="com.db.bms.entity.Client">
+	<include refid="pagePrefix"/>
+	
+   	select * from bus_client where 1=1
+   	<include refid="filterByOperatorForRead"/>
+	<include refid="fliterSearch"/>
+	
+	<include refid="pageSuffix"/>
+</select>
+<select id="findOperatorClientsCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Client">
+   	select count(*) from bus_client where 1=1
+   	<include refid="filterByOperatorForRead"/>
+	<include refid="fliterSearch"/>
+</select>
+<!-- ////////////////////////////////////////////////////////////////////////////// -->
+
+<!-- CA码策略 -->
+<!-- <select id="findClientWithStrategy" resultMap="map2Client"  parameterType="com.db.bms.entity.Client">
+	<include refid="pagePrefix"></include>
+
+	select <include refid="fields2Topic"/>,
+	<include refid="com.db.bms.dao.StrategyMapper.fields2Strategy"/>
+	from bus_client c
+	left join (
+		select *
+		from bus_strategy_condition con 
+		where con.condition_type=${@com.db.bms.entity.StrategyCondition@TYPE_CLIENT}
+	) con on c.client_no=con.condition_id
+	left join bus_strategy strategy on con.strategy_no = strategy.strategy_no
+	where 1=1;
+   	<if test="c.clientNo != null">
+    	and c.client_no=#{c.clientNo}
+   	</if>
+   	<if test="c.clientName != null and c.clientName != ''">
+    	and c.client_name like &apos;%${clientName}%&apos; escape '_'
+   	</if>
+	order by c.client_id desc
+
+	<include refid="pageSuffix"></include>	
+</select>
+
+<select id="findClientWithStrategyCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Client">
+	select count(1)
+	from bus_client c
+	left join (
+		select *
+		from bus_strategy_condition con 
+		where con.condition_type=${@com.db.bms.entity.StrategyCondition@TYPE_CLIENT} 
+	) con on c.client_no=con.condition_id
+	left join bus_strategy strategy on con.strategy_no = strategy.strategy_no
+	where 1=1
+   	<if test="c.clientNo != null">
+    	and c.client_no=#{c.clientNo}
+   	</if>
+   	<if test="c.clientName != null and c.clientName != ''">
+    	and c.client_name like &apos;%${clientName}%&apos; escape '_'
+   	</if>
+</select> -->
+
+
+
+<select id="findStrategyClientNoSelectCount" resultType="java.lang.Integer"  parameterType="com.db.bms.entity.Client">
+select count(1) 
+from bus_client client
+where 1=1
+<!-- can select all 
+<if test="strategyNo!=null" >
+	and client.company_no=(select bus_strategy.company_no from bus_strategy where bus_strategy.strategy_no=#{strategyNo})
+</if>
+<if test="strategyNo==null" > 
+	and client.company_no=#{companyNo}
+</if>
+ --> 
+ <if test="client.clientName != null  and client.clientName != '' " >
+  	and client.CLIENT_NAME like  &apos;%${client.clientName}%&apos; <!-- escape '_' , see GV-32 -->
+</if>
+<if test="excludeIds != null" >
+	and client.client_no not in 
+    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+   		#{item}
+	</foreach>
+</if>
+<include refid="filterSearch2"></include>
+</select>
+
+<select id="findStrategyClientNoSelect" resultMap="map2Client"  parameterType="com.db.bms.entity.Client">
+	<include refid="pagePrefix"></include>
+select <include refid="fields2Client"/> 
+from bus_client client
+where 1=1
+<!-- can select all 
+<if test="strategyNo!=null" >
+	and client.company_no=(select bus_strategy.company_no from bus_strategy where bus_strategy.strategy_no=#{strategyNo})
+-->	
+<!-- this should NOT check 	
+	and client.client_no not in ( select sc.condition_id from bus_strategy_condition sc where sc.strategy_no=#{strategyNo} 
+		and sc.condition_type= ${@com.db.bms.entity.StrategyCondition@TYPE_CLIENT} )
+ -->
+<!-- 		 
+</if>
+<if test="strategyNo==null" >
+	and client.company_no=#{companyNo}
+</if>
+--> 
+<if test="client.clientName != null  and client.clientName != '' " >
+  	and client.CLIENT_NAME like  &apos;%${client.clientName}%&apos; <!-- escape '_' , see GV-32 -->
+</if>
+<if test="excludeIds != null" >
+	and client.client_no not in 
+    <foreach item="item" index="index" collection="excludeIds" open="(" separator="," close=")">
+   		#{item}
+	</foreach>
+</if>
+<include refid="filterSearch2"></include>
+
+order by client.update_time desc, client.client_no desc
+	<include refid="pageSuffix"></include>       
+</select>
+
+</mapper>
